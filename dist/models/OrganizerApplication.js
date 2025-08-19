@@ -33,37 +33,62 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-// src/models/Registration.ts
 const mongoose_1 = __importStar(require("mongoose"));
-const registrationSchema = new mongoose_1.Schema({
-    user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
-    event: { type: mongoose_1.Schema.Types.ObjectId, ref: "Event", required: true },
+const organizerApplicationSchema = new mongoose_1.Schema({
+    user: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        unique: true // One application per user
+    },
+    organizationName: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 100
+    },
+    phoneNumber: {
+        type: String,
+        required: true,
+        trim: true,
+        match: /^[+]?[\d\s\-\(\)]+$/ // Basic phone number validation
+    },
+    organizationImage: {
+        type: String,
+        required: false
+    },
+    description: {
+        type: String,
+        required: false,
+        maxlength: 500
+    },
     status: {
         type: String,
-        enum: ["pending", "confirmed", "cancelled", "failed", "refunded"],
+        enum: ["pending", "approved", "rejected"],
         default: "pending"
     },
-    registeredAt: { type: Date, default: Date.now },
-    ticketType: { type: String, required: false },
-    amount: { type: Number, required: false },
-    paymentOrderId: { type: String, required: false },
-    paymentId: { type: String, required: false },
-    paymentVerifiedAt: { type: Date, required: false },
-    confirmedAt: { type: Date, required: false },
-    cancelledAt: { type: Date, required: false },
-    failedAt: { type: Date, required: false },
-    refundedAt: { type: Date, required: false },
-    hallTicket: { type: String, required: false },
-    notes: { type: String, required: false },
+    adminNotes: {
+        type: String,
+        required: false,
+        maxlength: 200
+    },
+    appliedAt: {
+        type: Date,
+        default: Date.now
+    },
+    reviewedAt: {
+        type: Date,
+        required: false
+    },
+    reviewedBy: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "User",
+        required: false
+    }
 }, { timestamps: true });
-// Index for unique user-event combination (only for confirmed registrations)
-registrationSchema.index({ user: 1, event: 1, status: 1 }, {
-    unique: true,
-    partialFilterExpression: { status: "confirmed" }
-});
-// Index for payment tracking
-registrationSchema.index({ paymentOrderId: 1 });
-registrationSchema.index({ paymentId: 1 });
-registrationSchema.index({ status: 1 });
-exports.default = mongoose_1.default.model("Registration", registrationSchema);
-//# sourceMappingURL=Register.js.map
+// Indexes for efficient querying
+organizerApplicationSchema.index({ status: 1 });
+organizerApplicationSchema.index({ user: 1 });
+organizerApplicationSchema.index({ appliedAt: -1 });
+exports.default = mongoose_1.default.model("OrganizerApplication", organizerApplicationSchema);
+//# sourceMappingURL=OrganizerApplication.js.map

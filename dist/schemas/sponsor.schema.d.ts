@@ -4,6 +4,8 @@ export declare const createSponsorSchema: z.ZodObject<{
     description: z.ZodString;
     publisher: z.ZodString;
     images: z.ZodArray<z.ZodString>;
+    link: z.ZodOptional<z.ZodString>;
+    contact: z.ZodOptional<z.ZodString>;
     expiresAt: z.ZodOptional<z.ZodCoercedDate<unknown>>;
 }, z.core.$strip>;
 export declare const updateSponsorSchema: z.ZodObject<{
@@ -11,6 +13,8 @@ export declare const updateSponsorSchema: z.ZodObject<{
     description: z.ZodOptional<z.ZodString>;
     publisher: z.ZodOptional<z.ZodString>;
     images: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    link: z.ZodOptional<z.ZodString>;
+    contact: z.ZodOptional<z.ZodString>;
     isActive: z.ZodOptional<z.ZodBoolean>;
     expiresAt: z.ZodOptional<z.ZodCoercedDate<unknown>>;
 }, z.core.$strip>;

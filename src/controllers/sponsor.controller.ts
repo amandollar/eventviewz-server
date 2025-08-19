@@ -5,7 +5,7 @@ import Sponsor from "../models/Sponsor";
 // Create a new sponsor (ADMIN ONLY)
 export const createSponsor = async (req: Request, res: Response) => {
     try {
-        const { title, description, publisher, expiresAt } = req.body;
+        const { title, description, publisher, link, contact, expiresAt } = req.body;
         const adminUser = (req as any).user;
 
         // Check if user is admin
@@ -41,6 +41,8 @@ export const createSponsor = async (req: Request, res: Response) => {
             title,
             description,
             publisher,
+            link,
+            contact,
             images: imageUrls,
             expiresAt: expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week default
         });
@@ -111,7 +113,7 @@ export const getSponsorById = async (req: Request, res: Response) => {
 export const updateSponsor = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { title, description, publisher, isActive, expiresAt } = req.body;
+        const { title, description, publisher, link, contact, isActive, expiresAt } = req.body;
         const adminUser = (req as any).user;
 
         // Check if user is admin
@@ -144,7 +146,7 @@ export const updateSponsor = async (req: Request, res: Response) => {
         }
 
         // Prepare update data
-        const updateData: any = { title, description, publisher, isActive, expiresAt };
+        const updateData: any = { title, description, publisher, link, contact, isActive, expiresAt };
         
         // Only update images if new ones were uploaded
         if (newImageUrls.length > 0) {

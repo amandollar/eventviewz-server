@@ -4,6 +4,8 @@ export interface ISponsor extends Document {
     description: string;
     publisher: string;
     images: string[];
+    link?: string;
+    contact?: string;
     isActive: boolean;
     expiresAt: Date;
     createdAt: Date;

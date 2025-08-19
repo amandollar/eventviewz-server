@@ -6,14 +6,13 @@ import cookieParser from "cookie-parser";
 import { Request, Response } from "express";
 import connectDB from "./libs/db";
 import indexRouter from "./routes/index.routes";
-
-
+import { generalLimiter } from "./middlewares/rateLimit.middleware";
 
 const app = express();
 const PORT = process.env.PORT;
 
-
-
+// Global rate limiting - applies to all routes
+app.use(generalLimiter);
 
 // Middleware
 app.use(cors({
@@ -22,8 +21,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-
-
 
 app.get("/", (_req: Request, res: Response) => {
   res.json({

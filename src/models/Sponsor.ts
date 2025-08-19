@@ -6,6 +6,8 @@ export interface ISponsor extends Document {
   description: string;
   publisher: string;
   images: string[];
+  link?: string; // Optional link to sponsor's website
+  contact?: string; // Optional contact information (email/phone)
   isActive: boolean;
   expiresAt: Date;
   createdAt: Date;
@@ -18,6 +20,8 @@ const sponsorSchema = new Schema<ISponsor>(
     description: { type: String, required: true, trim: true, maxlength: 500 },
     publisher: { type: String, required: true, trim: true, maxlength: 100 },
     images: [{ type: String, required: true }], // Array of image URLs
+    link: { type: String, trim: true, maxlength: 500 }, // Optional website link
+    contact: { type: String, trim: true, maxlength: 200 }, // Optional contact info
     isActive: { type: Boolean, default: true },
     expiresAt: { 
       type: Date, 

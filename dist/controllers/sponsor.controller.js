@@ -8,7 +8,7 @@ const Sponsor_1 = __importDefault(require("../models/Sponsor"));
 // Create a new sponsor (ADMIN ONLY)
 const createSponsor = async (req, res) => {
     try {
-        const { title, description, publisher, expiresAt } = req.body;
+        const { title, description, publisher, link, contact, expiresAt } = req.body;
         const adminUser = req.user;
         // Check if user is admin
         if (adminUser.role !== "admin") {
@@ -40,6 +40,8 @@ const createSponsor = async (req, res) => {
             title,
             description,
             publisher,
+            link,
+            contact,
             images: imageUrls,
             expiresAt: expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week default
         });
@@ -108,7 +110,7 @@ exports.getSponsorById = getSponsorById;
 const updateSponsor = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, publisher, isActive, expiresAt } = req.body;
+        const { title, description, publisher, link, contact, isActive, expiresAt } = req.body;
         const adminUser = req.user;
         // Check if user is admin
         if (adminUser.role !== "admin") {
@@ -137,7 +139,7 @@ const updateSponsor = async (req, res) => {
             newImageUrls.push(req.file.path);
         }
         // Prepare update data
-        const updateData = { title, description, publisher, isActive, expiresAt };
+        const updateData = { title, description, publisher, link, contact, isActive, expiresAt };
         // Only update images if new ones were uploaded
         if (newImageUrls.length > 0) {
             updateData.images = newImageUrls;

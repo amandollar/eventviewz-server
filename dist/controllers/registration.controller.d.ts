@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 export declare const registerForEvent: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+export declare const updateRegistration: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const getUserRegistrations: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const getEventRegistrations: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const updateRegistrationStatus: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;

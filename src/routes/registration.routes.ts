@@ -2,17 +2,20 @@
 import express from "express";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/role.middleware";
+import { validateSchema } from "../middlewares/validate.middleware";
 import {
     registerForEvent,
     getUserRegistrations,
     getEventRegistrations,
     updateRegistrationStatus,
+    updateRegistration,
     cancelRegistration,
     getHallTicket,
     getHallTicketForUser,
     getAllEventHallTickets
 } from "../controllers/registration.controller";
 import { generalLimiter, registrationLimiter } from "../middlewares/rateLimit.middleware";
+import { registerForEventSchema, updateRegistrationSchema } from "../schemas/registration.schema";
 
 const registrationRouter = express.Router();
 
@@ -20,8 +23,9 @@ const registrationRouter = express.Router();
 registrationRouter.use(authMiddleware);
 
 // User routes - apply rate limiting
-registrationRouter.post("/register", registrationLimiter, registerForEvent); // Strict rate limiting for registrations
+registrationRouter.post("/register", registrationLimiter, validateSchema(registerForEventSchema), registerForEvent); // Strict rate limiting for registrations
 registrationRouter.get("/user", generalLimiter, getUserRegistrations); // Moderate rate limiting for user data
+registrationRouter.put("/update", generalLimiter, validateSchema(updateRegistrationSchema), updateRegistration); // Update registration details
 registrationRouter.get("/ticket/:registrationId", generalLimiter, getHallTicket); // Moderate rate limiting for tickets
 registrationRouter.delete("/cancel/:registrationId", registrationLimiter, cancelRegistration); // Strict rate limiting for cancellations
 

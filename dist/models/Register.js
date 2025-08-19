@@ -44,7 +44,7 @@ const registrationSchema = new mongoose_1.Schema({
         default: "pending"
     },
     registeredAt: { type: Date, default: Date.now },
-    ticketType: { type: String, required: false },
+    ticketType: { type: String, required: true },
     amount: { type: Number, required: false },
     paymentOrderId: { type: String, required: false },
     paymentId: { type: String, required: false },
@@ -55,6 +55,32 @@ const registrationSchema = new mongoose_1.Schema({
     refundedAt: { type: Date, required: false },
     hallTicket: { type: String, required: false },
     notes: { type: String, required: false },
+    // Enhanced user data fields
+    registrationNumber: { type: String, required: true },
+    phoneNumber: { type: String, required: true },
+    college: { type: String, required: true },
+    department: { type: String, required: true },
+    yearOfStudy: {
+        type: String,
+        enum: ["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"],
+        required: true
+    },
+    dietaryPreferences: {
+        type: String,
+        enum: ["Vegetarian", "Non-Vegetarian", "Vegan", "No Preference"],
+        required: false
+    },
+    specialRequirements: { type: String, required: false },
+    emergencyContact: {
+        name: { type: String, required: false },
+        phone: { type: String, required: false },
+        relationship: { type: String, required: false }
+    },
+    tshirtSize: {
+        type: String,
+        enum: ["XS", "S", "M", "L", "XL", "XXL", "No T-shirt"],
+        required: false
+    }
 }, { timestamps: true });
 // Index for unique user-event combination (only for confirmed registrations)
 registrationSchema.index({ user: 1, event: 1, status: 1 }, {
@@ -65,5 +91,10 @@ registrationSchema.index({ user: 1, event: 1, status: 1 }, {
 registrationSchema.index({ paymentOrderId: 1 });
 registrationSchema.index({ paymentId: 1 });
 registrationSchema.index({ status: 1 });
+// Index for enhanced user data queries
+registrationSchema.index({ registrationNumber: 1 });
+registrationSchema.index({ college: 1 });
+registrationSchema.index({ department: 1 });
+registrationSchema.index({ yearOfStudy: 1 });
 exports.default = mongoose_1.default.model("Registration", registrationSchema);
 //# sourceMappingURL=Register.js.map

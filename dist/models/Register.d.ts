@@ -6,7 +6,7 @@ export interface IRegistration extends Document {
     event: IEvent["_id"];
     registeredAt: Date;
     status: "pending" | "confirmed" | "cancelled" | "failed" | "refunded";
-    ticketType?: string;
+    ticketType: string;
     amount?: number;
     paymentOrderId?: string;
     paymentId?: string;
@@ -17,6 +17,19 @@ export interface IRegistration extends Document {
     refundedAt?: Date;
     hallTicket?: string;
     notes?: string;
+    registrationNumber: string;
+    phoneNumber: string;
+    college: string;
+    department: string;
+    yearOfStudy: string;
+    dietaryPreferences?: string;
+    specialRequirements?: string;
+    emergencyContact?: {
+        name: string;
+        phone: string;
+        relationship: string;
+    };
+    tshirtSize?: string;
 }
 declare const _default: mongoose.Model<IRegistration, {}, {}, {}, mongoose.Document<unknown, {}, IRegistration, {}, {}> & IRegistration & Required<{
     _id: unknown;

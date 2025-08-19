@@ -9,14 +9,6 @@ export const submitApplication = async (req: Request, res: Response) => {
     const { organizationName, phoneNumber, description } = req.body;
     const organizationImage = req.file?.path; // From multer
 
-    // Validate input
-    if (!organizationName || !phoneNumber) {
-      return res.status(400).json({
-        success: false,
-        error: "Organization name and phone number are required",
-      });
-    }
-
     // Check if user already has an application
     const existingApplication = await OrganizerApplication.findOne({ user: userId });
     if (existingApplication) {
@@ -317,13 +309,6 @@ export const rejectApplication = async (req: Request, res: Response) => {
     const { id } = req.params;
     const adminId = (req as any).user.id;
     const { adminNotes } = req.body;
-
-    if (!adminNotes) {
-      return res.status(400).json({
-        success: false,
-        error: "Admin notes are required for rejection",
-      });
-    }
 
     const application = await OrganizerApplication.findById(id);
     if (!application) {

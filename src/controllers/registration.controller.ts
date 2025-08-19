@@ -7,7 +7,20 @@ import { generateHallTicket } from "../utils/hallTicket";
 // Register for an event
 export const registerForEvent = async (req: Request, res: Response) => {
     try {
-        const { eventId } = req.body;
+        const { 
+            eventId, 
+            ticketType,
+            registrationNumber,
+            phoneNumber,
+            college,
+            department,
+            yearOfStudy,
+            dietaryPreferences,
+            specialRequirements,
+            emergencyContact,
+            tshirtSize,
+            notes
+        } = req.body;
         const userId = (req as any).user._id;
 
         // Check if event exists and is active
@@ -43,11 +56,22 @@ export const registerForEvent = async (req: Request, res: Response) => {
             });
         }
 
-        // Create registration
+        // Create registration with enhanced data
         const registration = await Registration.create({
             user: userId,
             event: eventId,
-            status: "registered"
+            status: "registered",
+            ticketType,
+            registrationNumber,
+            phoneNumber,
+            college,
+            department,
+            yearOfStudy,
+            dietaryPreferences,
+            specialRequirements,
+            emergencyContact,
+            tshirtSize,
+            notes
         });
 
         // Add user to event participants (idempotent)
@@ -73,6 +97,72 @@ export const registerForEvent = async (req: Request, res: Response) => {
         return res.status(500).json({
             success: false,
             message: "Failed to register for event",
+            error: (error as any).message
+        });
+    }
+};
+
+// Update registration details
+export const updateRegistration = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user._id;
+        const { 
+            ticketType,
+            phoneNumber,
+            college,
+            department,
+            yearOfStudy,
+            dietaryPreferences,
+            specialRequirements,
+            emergencyContact,
+            tshirtSize,
+            notes
+        } = req.body;
+
+        // Find user's registration (assuming they want to update their latest registration)
+        // You might want to add eventId to the request body to be more specific
+        const registration = await Registration.findOne({ user: userId })
+            .sort({ registeredAt: -1 })
+            .populate("event", "title date");
+
+        if (!registration) {
+            return res.status(404).json({
+                success: false,
+                message: "No registration found for this user"
+            });
+        }
+
+        // Only allow updates if registration is still pending/confirmed
+        if (registration.status === "cancelled" || registration.status === "failed" || registration.status === "refunded") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot update registration that has been cancelled, failed, or refunded"
+            });
+        }
+
+        // Update fields if provided
+        if (ticketType) registration.ticketType = ticketType;
+        if (phoneNumber) registration.phoneNumber = phoneNumber;
+        if (college) registration.college = college;
+        if (department) registration.department = department;
+        if (yearOfStudy) registration.yearOfStudy = yearOfStudy;
+        if (dietaryPreferences !== undefined) registration.dietaryPreferences = dietaryPreferences;
+        if (specialRequirements !== undefined) registration.specialRequirements = specialRequirements;
+        if (emergencyContact) registration.emergencyContact = emergencyContact;
+        if (tshirtSize !== undefined) registration.tshirtSize = tshirtSize;
+        if (notes !== undefined) registration.notes = notes;
+
+        await registration.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Registration updated successfully",
+            data: registration
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update registration",
             error: (error as any).message
         });
     }

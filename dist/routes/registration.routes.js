@@ -7,14 +7,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const role_middleware_1 = require("../middlewares/role.middleware");
+const validate_middleware_1 = require("../middlewares/validate.middleware");
 const registration_controller_1 = require("../controllers/registration.controller");
 const rateLimit_middleware_1 = require("../middlewares/rateLimit.middleware");
+const registration_schema_1 = require("../schemas/registration.schema");
 const registrationRouter = express_1.default.Router();
 // All routes require authentication
 registrationRouter.use(auth_middleware_1.authMiddleware);
 // User routes - apply rate limiting
-registrationRouter.post("/register", rateLimit_middleware_1.registrationLimiter, registration_controller_1.registerForEvent); // Strict rate limiting for registrations
+registrationRouter.post("/register", rateLimit_middleware_1.registrationLimiter, (0, validate_middleware_1.validateSchema)(registration_schema_1.registerForEventSchema), registration_controller_1.registerForEvent); // Strict rate limiting for registrations
 registrationRouter.get("/user", rateLimit_middleware_1.generalLimiter, registration_controller_1.getUserRegistrations); // Moderate rate limiting for user data
+registrationRouter.put("/update", rateLimit_middleware_1.generalLimiter, (0, validate_middleware_1.validateSchema)(registration_schema_1.updateRegistrationSchema), registration_controller_1.updateRegistration); // Update registration details
 registrationRouter.get("/ticket/:registrationId", rateLimit_middleware_1.generalLimiter, registration_controller_1.getHallTicket); // Moderate rate limiting for tickets
 registrationRouter.delete("/cancel/:registrationId", rateLimit_middleware_1.registrationLimiter, registration_controller_1.cancelRegistration); // Strict rate limiting for cancellations
 // Admin/Organizer routes - apply rate limiting

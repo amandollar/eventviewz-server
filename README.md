@@ -72,16 +72,7 @@ EventViewz is a comprehensive event management platform that allows:
 - `POST /events` - **Create Event**: Admin/Organizer creates new event with image (Protected)
 - `PUT /events/:id` - **Update Event**: Admin/Organizer modifies existing event (Protected)
 - `DELETE /events/:id` - **Delete Event**: Admin/Organizer removes event (Protected)
-
-### 🚀 Projects (`/projects`)
-- `GET /projects` - **List All Projects**: Public endpoint to browse projects
-- `GET /projects/:id` - **Get Project Details**: View specific project with images
-- `POST /projects` - **Create Project**: Admin/Organizer creates collaborative project (Protected)
-- `PUT /projects/:id` - **Update Project**: Admin/Organizer modifies project (Protected)
-- `DELETE /projects/:id` - **Delete Project**: Admin/Organizer removes project (Protected)
-- `POST /projects/upload-image` - **Upload Project Image**: Add images to project gallery (Protected)
-- `POST /projects/join-leave` - **Join/Leave Project**: Users can participate in projects (Protected)
-- `GET /projects/user/my-projects` - **My Projects**: User views their own projects (Protected)
+- 
 
 ### 🎫 Registrations (`/registrations`)
 - `POST /registrations` - **Register for Event**: User registers for an event (Protected)

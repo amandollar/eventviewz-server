@@ -3,6 +3,13 @@ import { google } from "googleapis";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
 import dotenv from "dotenv";
+import { 
+  hashPassword, 
+  verifyPassword, 
+  generateTokens, 
+  validatePasswordStrength,
+  validateEmail
+} from "../utils/auth.utils";
 
 dotenv.config();
 
@@ -11,6 +18,144 @@ const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_SECRET,
     process.env.GOOGLE_REDIRECT_URI
 );
+
+// Normal Authentication Functions
+
+export const register = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { name, email, password } = req.body;
+    const image = req.file?.path; // Get uploaded image path
+
+    // Validation
+    if (!name || !email || !password) {
+      res.status(400).json({ error: "All fields are required" });
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      res.status(400).json({ error: "Invalid email format" });
+      return;
+    }
+
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      res.status(400).json({ error: "Password is too weak", details: passwordValidation.errors });
+      return;
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      res.status(409).json({ error: "User with this email already exists" });
+      return;
+    }
+
+    // Hash password
+    const hashedPassword = await hashPassword(password);
+
+    // Create user (automatically verified for now)
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      image, // Include profile image if uploaded
+      isEmailVerified: true // Skip email verification for now
+    });
+
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens((user as any)._id.toString(), user.role);
+
+    // Save refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Set refresh token cookie
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict" });
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully!",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: user.role,
+        isEmailVerified: user.isEmailVerified
+      },
+      accessToken
+    });
+
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const login = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      res.status(400).json({ error: "Email and password are required" });
+      return;
+    }
+
+    // Find user with password
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) {
+      res.status(401).json({ error: "Invalid credentials" });
+      return;
+    }
+
+    // Check if user has password (not Google OAuth user)
+    if (!user.password) {
+      res.status(401).json({ error: "This account uses Google OAuth. Please use Google login." });
+      return;
+    }
+
+    // Verify password
+    const isPasswordValid = await verifyPassword(password, user.password);
+    if (!isPasswordValid) {
+      res.status(401).json({ error: "Invalid credentials" });
+      return;
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens((user as any)._id.toString(), user.role);
+
+    // Save refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Set refresh token cookie
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict" });
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+        lastLogin: user.lastLogin
+      },
+      accessToken
+    });
+
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Existing Google OAuth Functions
 
 export const redirectToGoogle = (_req: Request, res: Response): void => {
     const url = oauth2Client.generateAuthUrl({
@@ -39,7 +184,12 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
         let user = await User.findOne({ email: data.email });
 
         if (!user) {
-            user = await User.create({ email: data.email, name: data.name });
+            user = await User.create({ 
+                email: data.email, 
+                name: data.name,
+                googleId: data.id,
+                isEmailVerified: true
+            });
         } else {
             user.lastLogin = new Date();
             await user.save();
@@ -143,8 +293,6 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
     }
 };
 
-
-
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user?.userId; // injected by your auth middleware
@@ -180,11 +328,6 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-/**
- * Delete user account
- * - A user can delete themselves
- * - Admin can delete any account
- */
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user?.userId;

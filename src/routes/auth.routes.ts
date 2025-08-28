@@ -1,31 +1,44 @@
 import express from "express";
-import { redirectToGoogle, googleCallback, refreshToken, logout, getCurrentUser,updateUser,deleteUser } from "../controllers/auth.controller";
+import multer from "multer";
+import { 
+  redirectToGoogle, 
+  googleCallback, 
+  refreshToken, 
+  logout, 
+  getCurrentUser,
+  updateUser,
+  deleteUser,
+  register,
+  login
+} from "../controllers/auth.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { authLimiter, generalLimiter } from "../middlewares/rateLimit.middleware";
+import { validateSchema } from "../middlewares/validate.middleware";
+import {
+  registerSchema,
+  loginSchema,
+  updateUserSchema
+} from "../schemas/auth.schemas";
+import upload from "../middlewares/mutlter.middleware";
 
 const authRouter = express.Router();
 
-// Apply strict rate limiting to sensitive auth endpoints
-// Redirect to Google OAuth2.0
-authRouter.get("/google", authLimiter, redirectToGoogle);
+// Normal Authentication Routes (with strict rate limiting and validation)
+authRouter.post("/register", authLimiter, upload.single('image'), validateSchema(registerSchema), register);
+authRouter.post("/login", authLimiter, validateSchema(loginSchema), login);
 
-// Handle the callback from Google OAuth2.0
+// Google OAuth Routes
+authRouter.get("/google", authLimiter, redirectToGoogle);
 authRouter.get("/google/callback", authLimiter, googleCallback);
 
-// Refresh token endpoint - very strict rate limiting
+// Token Management
 authRouter.post("/refresh", authLimiter, refreshToken);
-
-// Logout endpoint - moderate rate limiting
 authRouter.post("/logout", generalLimiter, logout);
 
-// Get current user details (protected route) - moderate rate limiting
+// User Management (protected routes)
 authRouter.get("/user", generalLimiter, authMiddleware, getCurrentUser);
-
-// Update user details (protected route) - moderate rate limiting
-authRouter.put("/user", generalLimiter, authMiddleware, updateUser);
-
-// Delete user account (protected route) - moderate rate limiting
-authRouter.delete("/user", generalLimiter, authMiddleware, deleteUser); 
+authRouter.put("/user", generalLimiter, authMiddleware, upload.single('image'), validateSchema(updateUserSchema), updateUser);
+authRouter.delete("/user", generalLimiter, authMiddleware, deleteUser);
 
 export default authRouter;
   

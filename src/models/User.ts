@@ -24,7 +24,7 @@ const userSchema = new Schema<IUser>(
     role: { type: String, enum: Object.values(UserRole), default: UserRole.STUDENT },
     googleId: { type: String, sparse: true, index: true },
     password: { type: String, select: false },
-    isEmailVerified: { type: Boolean, default: false },
+    isEmailVerified: { type: Boolean, default: true }, // Always true for now
     lastLogin: { type: Date },
     refreshToken: { type: String, select: false }
   },
@@ -35,14 +35,14 @@ const userSchema = new Schema<IUser>(
 userSchema.index({ email: 1, googleId: 1 });
 
 // Pre-save middleware to handle Google OAuth users
-userSchema.pre("save", function(next) {
+userSchema.pre("save", function(this: IUser, next: Function) {
   if (this.googleId) {
     this.isEmailVerified = true; // Google accounts are pre-verified
   }
   next();
 });
 
-userSchema.pre("findOneAndDelete", async function (next) {
+userSchema.pre("findOneAndDelete", async function (this: any, next: Function) {
   const userId = this.getQuery()["_id"];
   await mongoose.model("Registration").deleteMany({ user: userId });
   await mongoose.model("Certificate").deleteMany({ user: userId });

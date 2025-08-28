@@ -61,12 +61,12 @@ const eventSchema = new mongoose_1.Schema({
     tickets: { type: [ticketSchema], default: [] },
 }, { timestamps: true });
 // Cascade delete related models when event is deleted
-eventSchema.pre("findOneAndDelete", async function (next) {
-    const eventId = this.getQuery()["_id"];
-    await mongoose_1.default.model("Registration").deleteMany({ event: eventId });
-    await mongoose_1.default.model("Certificate").deleteMany({ event: eventId });
-    next();
-});
+// eventSchema.pre("findOneAndDelete", async function (next) {
+//   const eventId = this.getQuery()["_id"];
+//   await mongoose.model("Registration").deleteMany({ event: eventId });
+//   await mongoose.model("Certificate").deleteMany({ event: eventId });
+//   next();
+// });
 // Text index for search
 eventSchema.index({ title: "text", description: "text" });
 exports.default = mongoose_1.default.model("Event", eventSchema);

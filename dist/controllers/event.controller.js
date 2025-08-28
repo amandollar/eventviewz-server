@@ -8,8 +8,14 @@ const Event_1 = __importDefault(require("../models/Event"));
 // Create a new event
 const createEvent = async (req, res) => {
     try {
-        const { title, description, date, startTime, endTime, venue, location, category, createdBy, participants, maxParticipants } = req.body;
+        const { title, description, date, startTime, endTime, venue, location, category, participants, maxParticipants } = req.body;
         const image = req.file?.path;
+        // Get user ID from authenticated user (from JWT token)
+        const createdBy = req.user?.userId;
+        if (!createdBy) {
+            res.status(401).json({ error: "User not authenticated" });
+            return;
+        }
         const event = await Event_1.default.create({
             title,
             description,
@@ -19,7 +25,7 @@ const createEvent = async (req, res) => {
             venue,
             location,
             category,
-            createdBy,
+            createdBy, // Now comes from authenticated user
             participants: participants || [],
             maxParticipants,
             currentParticipants: participants ? participants.length : 0,

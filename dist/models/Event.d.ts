@@ -9,7 +9,7 @@ export interface ITicket {
 export interface IEvent extends Document {
     title: string;
     description?: string;
-    image?: string;
+    image: string;
     date: Date;
     startTime: string;
     endTime: string;

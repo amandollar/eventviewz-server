@@ -12,7 +12,7 @@ export interface ITicket {
 export interface IEvent extends Document {
   title: string;
   description?: string;
-  image?: string;
+  image: string;
   date: Date;
   startTime: string; // e.g., "14:30" (24-hour format)
   endTime: string;   // e.g., "16:30" (24-hour format)
@@ -64,12 +64,12 @@ const eventSchema = new Schema<IEvent>(
 );
 
 // Cascade delete related models when event is deleted
-eventSchema.pre("findOneAndDelete", async function (next) {
-  const eventId = this.getQuery()["_id"];
-  await mongoose.model("Registration").deleteMany({ event: eventId });
-  await mongoose.model("Certificate").deleteMany({ event: eventId });
-  next();
-});
+// eventSchema.pre("findOneAndDelete", async function (next) {
+//   const eventId = this.getQuery()["_id"];
+//   await mongoose.model("Registration").deleteMany({ event: eventId });
+//   await mongoose.model("Certificate").deleteMany({ event: eventId });
+//   next();
+// });
 
 // Text index for search
 eventSchema.index({ title: "text", description: "text" });

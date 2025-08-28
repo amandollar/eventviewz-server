@@ -3,7 +3,7 @@ import express from "express";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/role.middleware";
 import { validateSchema } from "../middlewares/validate.middleware";
-import upload from "../middlewares/mutlter.middleware";
+import upload from "../middlewares/multer.middleware";
 import {
     createSponsor,
     getSponsors,

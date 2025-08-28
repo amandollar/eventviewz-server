@@ -4,7 +4,7 @@ import { authMiddleware } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/role.middleware";
 import { validateSchema } from "../middlewares/validate.middleware";
 import { createEventSchema,updateEventWithIdSchema } from "../schemas/event.schema";
-import upload from "../middlewares/mutlter.middleware";
+import upload from "../middlewares/multer.middleware";
 import { generalLimiter, eventCreationLimiter, uploadLimiter } from "../middlewares/rateLimit.middleware";
 
 const eventRouter = Router();

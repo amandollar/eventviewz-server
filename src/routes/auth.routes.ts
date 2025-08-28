@@ -19,7 +19,7 @@ import {
   loginSchema,
   updateUserSchema
 } from "../schemas/auth.schemas";
-import upload from "../middlewares/mutlter.middleware";
+import upload from "../middlewares/multer.middleware";
 
 const authRouter = express.Router();
 

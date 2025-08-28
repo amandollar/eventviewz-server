@@ -81,8 +81,7 @@ export const updateUserSchema = z.object({
       .min(2, "Name must be at least 2 characters long")
       .max(50, "Name must be less than 50 characters")
       .trim()
-      .optional(),
-    image: z.string().url("Invalid image URL").optional()
+      .optional()
   }),
   file: z.object({
     fieldname: z.string(),

@@ -13,7 +13,7 @@ import {
   getApplicationStats
 } from "../controllers/organizerApplication.controller";
 import { generalLimiter } from "../middlewares/rateLimit.middleware";
-import upload from "../middlewares/mutlter.middleware";
+import upload from "../middlewares/multer.middleware";
 import {
   submitApplicationSchema,
   updateApplicationSchema,

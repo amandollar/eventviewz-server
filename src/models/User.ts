@@ -42,12 +42,13 @@ userSchema.pre("save", function(this: IUser, next: Function) {
   next();
 });
 
-userSchema.pre("findOneAndDelete", async function (this: any, next: Function) {
-  const userId = this.getQuery()["_id"];
-  await mongoose.model("Registration").deleteMany({ user: userId });
-  await mongoose.model("Certificate").deleteMany({ user: userId });
-  await mongoose.model("Event").deleteMany({ createdBy: userId });
-  next();
-});
+// Temporarily disabled cascade delete to fix the schema error
+// userSchema.pre("findOneAndDelete", async function (this: any, next: Function) {
+//   const userId = this.getQuery()["_id"];
+//   await mongoose.model("Register").deleteMany({ user: userId });
+//   await mongoose.model("Cetificate").deleteMany({ user: userId });
+//   await mongoose.model("Event").deleteMany({ createdBy: userId });
+//   next();
+// });
 
 export default mongoose.model<IUser>("User", userSchema);

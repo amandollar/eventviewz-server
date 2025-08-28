@@ -302,17 +302,30 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    const allowedFields = ["name", "image"]; // prevent role/email tampering
     const updates: any = {};
+    
+    // Handle name update from body
+    if (req.body.name !== undefined) {
+      updates.name = req.body.name;
+    }
+    
+    // Handle image update from file upload
+    if (req.file) {
+      updates.image = req.file.path; // Cloudinary URL from multer
+    }
+
+    // Only allow name and image updates (prevent role/email tampering)
+    const allowedFields = ["name", "image"];
+    const filteredUpdates: any = {};
     for (const field of allowedFields) {
-      if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
+      if (updates[field] !== undefined) {
+        filteredUpdates[field] = updates[field];
       }
     }
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: updates },
+      { $set: filteredUpdates },
       { new: true, runValidators: true }
     ).select("-refreshToken -__v");
 

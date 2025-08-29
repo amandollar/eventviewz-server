@@ -8,7 +8,7 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const payment_controller_1 = require("../controllers/payment.controller");
 const rateLimit_middleware_1 = require("../middlewares/rateLimit.middleware");
 const paymentRouter = express_1.default.Router();
-// 🔔 Webhook (must be unauthenticated, Razorpay calls this directly)
+//  Webhook (must be unauthenticated, Razorpay calls this directly)
 paymentRouter.post("/webhook", payment_controller_1.razorpayWebhook);
 // All other routes require authentication
 paymentRouter.use(auth_middleware_1.authMiddleware);

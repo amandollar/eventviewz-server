@@ -5,11 +5,13 @@ export const validateSchema = <T extends ZodObject<any>>(schema: T) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Check if schema expects body, query, params structure or just body
-      const schemaKeys = Object.keys(schema.shape || {});
+      const schemaKeys = Object.keys((schema as any).shape || {});
       const hasBodyKey = schemaKeys.includes('body');
-      
-      if (hasBodyKey) {
-        // Schema expects { body, query, params } structure
+      const hasQueryKey = schemaKeys.includes('query');
+      const hasParamsKey = schemaKeys.includes('params');
+
+      if (hasBodyKey || hasQueryKey || hasParamsKey) {
+        // Schema expects a structured object
         await schema.parseAsync({
           body: req.body,
           query: req.query,

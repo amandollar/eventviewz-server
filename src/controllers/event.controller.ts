@@ -8,7 +8,7 @@ export const createEvent = async (req: Request, res: Response) => {
         const image = req.file?.path;
         
         // Get user ID from authenticated user (from JWT token)
-        const createdBy = (req as any).user?.userId;
+        const createdBy = (req as any).user?.id;
         
         if (!createdBy) {
             res.status(401).json({ error: "User not authenticated" });

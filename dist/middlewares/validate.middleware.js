@@ -8,8 +8,10 @@ const validateSchema = (schema) => {
             // Check if schema expects body, query, params structure or just body
             const schemaKeys = Object.keys(schema.shape || {});
             const hasBodyKey = schemaKeys.includes('body');
-            if (hasBodyKey) {
-                // Schema expects { body, query, params } structure
+            const hasQueryKey = schemaKeys.includes('query');
+            const hasParamsKey = schemaKeys.includes('params');
+            if (hasBodyKey || hasQueryKey || hasParamsKey) {
+                // Schema expects a structured object
                 await schema.parseAsync({
                     body: req.body,
                     query: req.query,

@@ -14,15 +14,15 @@ export const verifyPassword = async (password: string, hashedPassword: string): 
 };
 
 // Generate JWT tokens
-export const generateTokens = (userId: string, role: string) => {
+export const generateTokens = (id: string, role: string) => {
   const accessToken = jwt.sign(
-    { userId, role },
+    { id, role },
     process.env.JWT_SECRET!,
     { expiresIn: "15m" }
   );
   
   const refreshToken = jwt.sign(
-    { userId },
+    { id },
     process.env.JWT_SECRET!,
     { expiresIn: "7d" }
   );

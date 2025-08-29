@@ -161,8 +161,8 @@ const googleCallback = async (req, res) => {
             user.lastLogin = new Date();
             await user.save();
         }
-        const accessToken = jsonwebtoken_1.default.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "15m" });
-        const refreshToken = jsonwebtoken_1.default.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const accessToken = jsonwebtoken_1.default.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "15m" });
+        const refreshToken = jsonwebtoken_1.default.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
         user.refreshToken = refreshToken;
         await user.save();
         res.cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict" });
@@ -182,12 +182,12 @@ const refreshToken = async (req, res) => {
     }
     try {
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
-        const user = await User_1.default.findById(decoded.userId);
+        const user = await User_1.default.findById(decoded.id);
         if (!user || user.refreshToken !== token) {
             res.status(403).json({ error: "Invalid refresh token" });
             return;
         }
-        const newAccessToken = jsonwebtoken_1.default.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "15m" });
+        const newAccessToken = jsonwebtoken_1.default.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "15m" });
         res.json({ accessToken: newAccessToken });
     }
     catch {
@@ -201,7 +201,7 @@ const logout = async (req, res) => {
     if (token) {
         try {
             const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
-            await User_1.default.findByIdAndUpdate(decoded.userId, { refreshToken: null });
+            await User_1.default.findByIdAndUpdate(decoded.id, { refreshToken: null });
         }
         catch (_error) {
             // ignore invalid token and proceed with logout
@@ -214,7 +214,7 @@ exports.logout = logout;
 const getCurrentUser = async (req, res) => {
     try {
         // The user ID should be available from the auth middleware
-        const userId = req.user?.userId;
+        const userId = req.user?.id;
         if (!userId) {
             res.status(401).json({ error: "User not authenticated" });
             return;
@@ -242,7 +242,7 @@ const getCurrentUser = async (req, res) => {
 exports.getCurrentUser = getCurrentUser;
 const updateUser = async (req, res) => {
     try {
-        const userId = req.user?.userId; // injected by your auth middleware
+        const userId = req.user?.id; // injected by your auth middleware
         if (!userId) {
             res.status(401).json({ error: "Not authenticated" });
             return;
@@ -279,7 +279,7 @@ const updateUser = async (req, res) => {
 exports.updateUser = updateUser;
 const deleteUser = async (req, res) => {
     try {
-        const userId = req.user?.userId;
+        const userId = req.user?.id;
         const role = req.user?.role;
         if (!userId) {
             res.status(401).json({ error: "Not authenticated" });

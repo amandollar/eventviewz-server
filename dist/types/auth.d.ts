@@ -1,6 +1,6 @@
 import { Request } from 'express';
 export interface JWTPayload {
-    userId: string;
+    id: string;
     role?: string;
     iat?: number;
     exp?: number;

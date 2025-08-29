@@ -11,7 +11,7 @@ const createEvent = async (req, res) => {
         const { title, description, date, startTime, endTime, venue, location, category, participants, maxParticipants } = req.body;
         const image = req.file?.path;
         // Get user ID from authenticated user (from JWT token)
-        const createdBy = req.user?.userId;
+        const createdBy = req.user?.id;
         if (!createdBy) {
             res.status(401).json({ error: "User not authenticated" });
             return;

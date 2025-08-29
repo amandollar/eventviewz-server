@@ -196,12 +196,12 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
         }
 
         const accessToken = jwt.sign(
-            { userId: user.id, role: user.role },
+            { id: user.id, role: user.role },
             process.env.JWT_SECRET!,
             { expiresIn: "15m" }
         );
         const refreshToken = jwt.sign(
-            { userId: user.id },
+            { id: user.id },
             process.env.JWT_SECRET!,
             { expiresIn: "7d" }
         );
@@ -227,7 +227,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-        const user = await User.findById(decoded.userId);
+        const user = await User.findById(decoded.id);
 
         if (!user || user.refreshToken !== token) {
             res.status(403).json({ error: "Invalid refresh token" });
@@ -235,7 +235,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
         }
 
         const newAccessToken = jwt.sign(
-            { userId: user._id, role: user.role },
+            { id: user._id, role: user.role },
             process.env.JWT_SECRET!,
             { expiresIn: "15m" }
         );
@@ -252,7 +252,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-            await User.findByIdAndUpdate(decoded.userId, { refreshToken: null });
+            await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
         } catch (_error) {
             // ignore invalid token and proceed with logout
         }
@@ -265,7 +265,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 export const getCurrentUser = async (req: Request, res: Response): Promise<void> => {
     try {
         // The user ID should be available from the auth middleware
-        const userId = (req as any).user?.userId;
+        const userId = (req as any).user?.id;
         
         if (!userId) {
             res.status(401).json({ error: "User not authenticated" });
@@ -295,7 +295,7 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
 
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user?.userId; // injected by your auth middleware
+    const userId = (req as any).user?.id; // injected by your auth middleware
 
     if (!userId) {
       res.status(401).json({ error: "Not authenticated" });
@@ -343,7 +343,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
 
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user?.userId;
+    const userId = (req as any).user?.id;
     const role = (req as any).user?.role;
 
     if (!userId) {

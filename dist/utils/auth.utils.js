@@ -19,9 +19,9 @@ const verifyPassword = async (password, hashedPassword) => {
 };
 exports.verifyPassword = verifyPassword;
 // Generate JWT tokens
-const generateTokens = (userId, role) => {
-    const accessToken = jsonwebtoken_1.default.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: "15m" });
-    const refreshToken = jsonwebtoken_1.default.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+const generateTokens = (id, role) => {
+    const accessToken = jsonwebtoken_1.default.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    const refreshToken = jsonwebtoken_1.default.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
     return { accessToken, refreshToken };
 };
 exports.generateTokens = generateTokens;

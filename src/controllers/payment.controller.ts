@@ -111,6 +111,7 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
     const eventType = req.body.event;
 
     if (eventType === "payment.captured") {
+      console.log("payment.captured");
       const payment = req.body.payload.payment.entity;
       const registration = await Registration.findOne({ paymentOrderId: payment.order_id });
       if (registration && registration.status !== "confirmed") {

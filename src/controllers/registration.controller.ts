@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import Registration from "../models/Register";
 import Event from "../models/Event";
 import { generateHallTicket } from "../utils/hallTicket";
+import { confirmRegistrationEffects, revertConfirmedRegistrationEffects } from "../utils/registrationSideEffects";
 
 // Register for an event
 export const registerForEvent = async (req: Request, res: Response) => {
@@ -56,11 +57,23 @@ export const registerForEvent = async (req: Request, res: Response) => {
             });
         }
 
-        // Create registration with enhanced data
+        // Determine ticket and whether event is paid
+        const ticket = (event as any).tickets?.find((t: any) => t.type === ticketType);
+        const isPaidEvent = ticket && Number(ticket.price) > 0;
+
+        // For paid events, prevent direct registration and require payment flow
+        if (isPaidEvent) {
+            return res.status(400).json({
+                success: false,
+                message: "This is a paid event. Please create a payment order and complete payment to confirm registration."
+            });
+        }
+
+        // Free events: create confirmed registration and apply side effects
         const registration = await Registration.create({
             user: userId,
             event: eventId,
-            status: "registered",
+            status: "confirmed",
             ticketType,
             registrationNumber,
             phoneNumber,
@@ -71,17 +84,12 @@ export const registerForEvent = async (req: Request, res: Response) => {
             specialRequirements,
             emergencyContact,
             tshirtSize,
-            notes
+            notes,
+            confirmedAt: new Date()
         });
 
-        // Add user to event participants (idempotent)
-        await Event.findByIdAndUpdate(eventId, {
-            $addToSet: { participants: userId },
-            $inc: { currentParticipants: 1 }
-        });
-
-        // Generate hall ticket
-        const hallTicket = await generateHallTicket((registration._id as any).toString());
+        // Apply centralized side effects (participants, counts, tickets, hall ticket)
+        await confirmRegistrationEffects(registration);
 
         // Populate user and event details
         await registration.populate("user", "name email image");
@@ -91,7 +99,7 @@ export const registerForEvent = async (req: Request, res: Response) => {
             success: true,
             message: "Successfully registered for event",
             data: registration,
-            hallTicket
+            hallTicket: registration.hallTicket
         });
     } catch (error) {
         return res.status(500).json({
@@ -323,15 +331,13 @@ export const cancelRegistration = async (req: Request, res: Response) => {
             });
         }
 
-        // Update status to cancelled
-        await Registration.findByIdAndUpdate(registrationId, { status: "cancelled" });
-
-        // Remove user from event participants and prevent negative counts
-        await Event.findByIdAndUpdate(registration.event, {
-            $pull: { participants: userId },
-            $inc: { currentParticipants: -1 },
-            $max: { currentParticipants: 0 }
-        });
+        // Only revert side effects if previously confirmed
+        if (registration.status === "confirmed") {
+            await Registration.findByIdAndUpdate(registrationId, { status: "cancelled", cancelledAt: new Date() });
+            await revertConfirmedRegistrationEffects(registration);
+        } else {
+            await Registration.findByIdAndUpdate(registrationId, { status: "cancelled", cancelledAt: new Date() });
+        }
 
         return res.status(200).json({
             success: true,

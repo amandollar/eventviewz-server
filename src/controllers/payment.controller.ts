@@ -4,6 +4,7 @@ import Registration from "../models/Register";
 import Event from "../models/Event";
 import User from "../models/User";
 import { generateHallTicket } from "../utils/hallTicket";
+import { confirmRegistrationEffects } from "../utils/registrationSideEffects";
 
 // Initialize Razorpay with fallback values for development
 const razorpay = new Razorpay({
@@ -14,14 +15,35 @@ const razorpay = new Razorpay({
 // Create payment order
 export const createPaymentOrder = async (req: Request, res: Response) => {
   try {
-    const { eventId, ticketType } = req.body;
-    const userId = (req as any).user.id;
+    const { 
+      eventId, 
+      ticketType,
+      registrationNumber,
+      phoneNumber,
+      college,
+      department,
+      yearOfStudy,
+      dietaryPreferences,
+      specialRequirements,
+      emergencyContact,
+      tshirtSize,
+      notes
+    } = req.body;
+    const userId = (req as any).user._id;
 
     // Validate input
     if (!eventId || !ticketType) {
       return res.status(400).json({
         success: false,
         error: "Event ID and ticket type are required",
+      });
+    }
+
+    // Validate required enhanced fields for pending registration
+    if (!registrationNumber || !phoneNumber || !college || !department || !yearOfStudy) {
+      return res.status(400).json({
+        success: false,
+        error: "registrationNumber, phoneNumber, college, department and yearOfStudy are required",
       });
     }
 
@@ -77,7 +99,7 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       },
     });
 
-    // Create pending registration
+    // Create pending registration with provided enhanced data
     const registration = new Registration({
       user: userId,
       event: eventId,
@@ -86,6 +108,16 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       paymentOrderId: order.id,
       amount: ticket.price,
       registeredAt: new Date(),
+      registrationNumber,
+      phoneNumber,
+      college,
+      department,
+      yearOfStudy,
+      dietaryPreferences,
+      specialRequirements,
+      emergencyContact,
+      tshirtSize,
+      notes
     });
 
     await registration.save();
@@ -104,6 +136,7 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
         status: registration.status,
         ticketType: registration.ticketType,
         amount: registration.amount,
+        paymentOrderId: registration.paymentOrderId,
       },
     });
   } catch (error) {
@@ -180,28 +213,8 @@ export const verifyPayment = async (req: Request, res: Response) => {
     registration.paymentVerifiedAt = new Date();
     registration.confirmedAt = new Date();
 
-    // Generate hall ticket
-    const hallTicket = await generateHallTicket((registration._id as any).toString());
-    registration.hallTicket = JSON.stringify(hallTicket);
-
     await registration.save();
-
-    // Update event participant count
-    event.currentParticipants += 1;
-    
-    // Update ticket availability
-    const ticketIndex = event.tickets.findIndex((t: any) => t.type === registration.ticketType);
-    if (ticketIndex !== -1 && event.tickets[ticketIndex]) {
-      event.tickets[ticketIndex].available -= 1;
-    }
-
-    await event.save();
-
-    // Add user to event participants
-    if (!event.participants.includes(registration.user)) {
-      event.participants.push(registration.user);
-      await event.save();
-    }
+    await confirmRegistrationEffects(registration);
 
     return res.status(200).json({
       success: true,
@@ -234,7 +247,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
 export const getPaymentStatus = async (req: Request, res: Response) => {
   try {
     const { registrationId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = (req as any).user._id;
 
     const registration = await Registration.findById(registrationId)
       .populate("event", "title date venue")
@@ -248,7 +261,7 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
     }
 
     // Check if user owns this registration
-    if ((registration.user as any).toString() !== userId) {
+    if ((registration.user as any).toString() !== String(userId)) {
       return res.status(403).json({
         success: false,
         error: "Access denied",
@@ -285,7 +298,7 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
 export const cancelPaymentOrder = async (req: Request, res: Response) => {
   try {
     const { registrationId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = (req as any).user._id;
 
     const registration = await Registration.findById(registrationId);
     if (!registration) {
@@ -296,7 +309,7 @@ export const cancelPaymentOrder = async (req: Request, res: Response) => {
     }
 
     // Check if user owns this registration
-    if ((registration.user as any).toString() !== userId) {
+    if ((registration.user as any).toString() !== String(userId)) {
       return res.status(403).json({
         success: false,
         error: "Access denied",

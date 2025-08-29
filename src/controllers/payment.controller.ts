@@ -1,22 +1,23 @@
 import { Request, Response } from "express";
 import Razorpay from "razorpay";
+import crypto from "crypto";
 import Registration from "../models/Register";
 import Event from "../models/Event";
-import User from "../models/User";
-import { generateHallTicket } from "../utils/hallTicket";
 import { confirmRegistrationEffects } from "../utils/registrationSideEffects";
 
-// Initialize Razorpay with fallback values for development
+// Initialize Razorpay
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_1234567890',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'test_secret_key_1234567890',
+  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_1234567890",
+  key_secret: process.env.RAZORPAY_KEY_SECRET || "test_secret_key_1234567890",
 });
 
-// Create payment order
+// ===================
+// Create Payment Order
+// ===================
 export const createPaymentOrder = async (req: Request, res: Response) => {
   try {
-    const { 
-      eventId, 
+    const {
+      eventId,
       ticketType,
       registrationNumber,
       phoneNumber,
@@ -27,19 +28,13 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       specialRequirements,
       emergencyContact,
       tshirtSize,
-      notes
+      notes,
     } = req.body;
     const userId = (req as any).user._id;
 
-    // Validate input
     if (!eventId || !ticketType) {
-      return res.status(400).json({
-        success: false,
-        error: "Event ID and ticket type are required",
-      });
+      return res.status(400).json({ success: false, error: "Event ID and ticket type are required" });
     }
-
-    // Validate required enhanced fields for pending registration
     if (!registrationNumber || !phoneNumber || !college || !department || !yearOfStudy) {
       return res.status(400).json({
         success: false,
@@ -47,64 +42,28 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       });
     }
 
-    // Get event details
     const event = await Event.findById(eventId);
-    if (!event) {
-      return res.status(404).json({
-        success: false,
-        error: "Event not found",
-      });
-    }
+    if (!event) return res.status(404).json({ success: false, error: "Event not found" });
 
-    // Find ticket details
     const ticket = event.tickets.find((t: any) => t.type === ticketType);
-    if (!ticket) {
-      return res.status(404).json({
-        success: false,
-        error: "Ticket type not found",
-      });
-    }
+    if (!ticket) return res.status(404).json({ success: false, error: "Ticket type not found" });
+    if (ticket.available <= 0) return res.status(400).json({ success: false, error: "Tickets not available" });
 
-    // Check if ticket is available
-    if (ticket.available <= 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Tickets not available",
-      });
-    }
+    const existing = await Registration.findOne({ user: userId, event: eventId });
+    if (existing) return res.status(400).json({ success: false, error: "Already registered for this event" });
 
-    // Check if user is already registered
-    const existingRegistration = await Registration.findOne({
-      user: userId,
-      event: eventId,
-    });
-
-    if (existingRegistration) {
-      return res.status(400).json({
-        success: false,
-        error: "Already registered for this event",
-      });
-    }
-
-    // Create Razorpay order
     const order = await razorpay.orders.create({
-      amount: ticket.price * 100, // Razorpay expects amount in paise
+      amount: ticket.price * 100,
       currency: "INR",
       receipt: `event_${eventId}_user_${userId}_${Date.now()}`,
-      notes: {
-        eventId: eventId,
-        userId: userId,
-        ticketType: ticketType,
-        eventTitle: event.title,
-      },
+      notes: { eventId, userId, ticketType, eventTitle: event.title },
     });
 
-    // Create pending registration with provided enhanced data
     const registration = new Registration({
       user: userId,
       event: eventId,
       status: "pending",
-      ticketType: ticketType,
+      ticketType,
       paymentOrderId: order.id,
       amount: ticket.price,
       registeredAt: new Date(),
@@ -117,7 +76,7 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       specialRequirements,
       emergencyContact,
       tshirtSize,
-      notes
+      notes,
     });
 
     await registration.save();
@@ -125,125 +84,65 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
     return res.status(201).json({
       success: true,
       message: "Payment order created successfully",
-      order: {
-        id: order.id,
-        amount: order.amount,
-        currency: order.currency,
-        receipt: order.receipt,
-      },
-      registration: {
-        id: registration._id,
-        status: registration.status,
-        ticketType: registration.ticketType,
-        amount: registration.amount,
-        paymentOrderId: registration.paymentOrderId,
-      },
+      order: { id: order.id, amount: order.amount, currency: order.currency, receipt: order.receipt },
+      registration: { id: registration._id, status: registration.status, ticketType, amount: registration.amount },
     });
-  } catch (error) {
-    console.error("Payment order creation error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to create payment order",
-    });
+  } catch (err) {
+    console.error("createPaymentOrder error:", err);
+    return res.status(500).json({ success: false, error: "Failed to create payment order" });
   }
 };
 
-// Verify payment and complete registration
-export const verifyPayment = async (req: Request, res: Response) => {
+// ===================
+// Razorpay Webhook (Single Source of Truth)
+// ===================
+export const razorpayWebhook = async (req: Request, res: Response) => {
   try {
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      registrationId,
-    } = req.body;
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET!;
+    const signature = req.headers["x-razorpay-signature"] as string;
+    const body = JSON.stringify(req.body);
 
-    // Validate input
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !registrationId) {
-      return res.status(400).json({
-        success: false,
-        error: "All payment verification parameters are required",
-      });
+    // Verify webhook
+    const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");
+    if (expected !== signature) {
+      return res.status(400).json({ success: false, error: "Invalid webhook signature" });
     }
 
-    // Verify payment signature
-    const text = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const crypto = require("crypto");
-    const signature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
-      .update(text)
-      .digest("hex");
+    const eventType = req.body.event;
 
-    if (signature !== razorpay_signature) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid payment signature",
-      });
+    if (eventType === "payment.captured") {
+      const payment = req.body.payload.payment.entity;
+      const registration = await Registration.findOne({ paymentOrderId: payment.order_id });
+      if (registration && registration.status !== "confirmed") {
+        registration.status = "confirmed";
+        registration.paymentId = payment.id;
+        registration.paymentVerifiedAt = new Date();
+        registration.confirmedAt = new Date();
+        await registration.save();
+
+        await confirmRegistrationEffects(registration);
+      }
     }
 
-    // Get registration details
-    const registration = await Registration.findById(registrationId);
-    if (!registration) {
-      return res.status(404).json({
-        success: false,
-        error: "Registration not found",
-      });
+    if (eventType === "payment.failed") {
+      const payment = req.body.payload.payment.entity;
+      const registration = await Registration.findOne({ paymentOrderId: payment.order_id });
+      if (registration) {
+        registration.status = "failed";
+        await registration.save();
+      }
     }
 
-    // Check if payment is already verified
-    if (registration.status === "confirmed") {
-      return res.status(400).json({
-        success: false,
-        error: "Payment already verified",
-      });
-    }
-
-    // Get event details
-    const event = await Event.findById(registration.event);
-    if (!event) {
-      return res.status(404).json({
-        success: false,
-        error: "Event not found",
-      });
-    }
-
-    // Update registration status
-    registration.status = "confirmed";
-    registration.paymentId = razorpay_payment_id;
-    registration.paymentVerifiedAt = new Date();
-    registration.confirmedAt = new Date();
-
-    await registration.save();
-    await confirmRegistrationEffects(registration);
-
-    return res.status(200).json({
-      success: true,
-      message: "Payment verified and registration confirmed",
-      registration: {
-        id: registration._id,
-        status: registration.status,
-        ticketType: registration.ticketType,
-        amount: registration.amount,
-        hallTicket: registration.hallTicket,
-        confirmedAt: registration.confirmedAt,
-      },
-      event: {
-        title: event.title,
-        date: event.date,
-        venue: event.venue,
-        currentParticipants: event.currentParticipants,
-      },
-    });
-  } catch (error) {
-    console.error("Payment verification error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to verify payment",
-    });
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("razorpayWebhook error:", err);
+    return res.status(500).json({ success: false });
   }
 };
 
-// Get payment status
+// ===================
+// Get Payment Status
+// ===================
 export const getPaymentStatus = async (req: Request, res: Response) => {
   try {
     const { registrationId } = req.params;
@@ -253,24 +152,13 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
       .populate("event", "title date venue")
       .populate("user", "name email");
 
-    if (!registration) {
-      return res.status(404).json({
-        success: false,
-        error: "Registration not found",
-      });
-    }
-
-    // Check if user owns this registration
+    if (!registration) return res.status(404).json({ success: false, error: "Registration not found" });
     if ((registration.user as any).toString() !== String(userId)) {
-      return res.status(403).json({
-        success: false,
-        error: "Access denied",
-      });
+      return res.status(403).json({ success: false, error: "Access denied" });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Payment status retrieved successfully",
       registration: {
         id: registration._id,
         status: registration.status,
@@ -285,46 +173,29 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
         user: registration.user,
       },
     });
-  } catch (error) {
-    console.error("Get payment status error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to get payment status",
-    });
+  } catch (err) {
+    console.error("getPaymentStatus error:", err);
+    return res.status(500).json({ success: false, error: "Failed to get payment status" });
   }
 };
 
-// Cancel payment order
+// ===================
+// Cancel Payment Order
+// ===================
 export const cancelPaymentOrder = async (req: Request, res: Response) => {
   try {
     const { registrationId } = req.params;
     const userId = (req as any).user._id;
 
     const registration = await Registration.findById(registrationId);
-    if (!registration) {
-      return res.status(404).json({
-        success: false,
-        error: "Registration not found",
-      });
-    }
-
-    // Check if user owns this registration
+    if (!registration) return res.status(404).json({ success: false, error: "Registration not found" });
     if ((registration.user as any).toString() !== String(userId)) {
-      return res.status(403).json({
-        success: false,
-        error: "Access denied",
-      });
+      return res.status(403).json({ success: false, error: "Access denied" });
     }
-
-    // Check if payment is already confirmed
     if (registration.status === "confirmed") {
-      return res.status(400).json({
-        success: false,
-        error: "Cannot cancel confirmed registration",
-      });
+      return res.status(400).json({ success: false, error: "Cannot cancel confirmed registration" });
     }
 
-    // Update registration status
     registration.status = "cancelled";
     registration.cancelledAt = new Date();
     await registration.save();
@@ -332,25 +203,20 @@ export const cancelPaymentOrder = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message: "Payment order cancelled successfully",
-      registration: {
-        id: registration._id,
-        status: registration.status,
-        cancelledAt: registration.cancelledAt,
-      },
+      registration: { id: registration._id, status: registration.status, cancelledAt: registration.cancelledAt },
     });
-  } catch (error) {
-    console.error("Cancel payment order error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to cancel payment order",
-    });
+  } catch (err) {
+    console.error("cancelPaymentOrder error:", err);
+    return res.status(500).json({ success: false, error: "Failed to cancel payment order" });
   }
 };
 
-// Get user's payment history
+// ===================
+// Get User's Payment History
+// ===================
 export const getPaymentHistory = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = (req as any).user._id;
     const { page = 1, limit = 10 } = req.query;
 
     const registrations = await Registration.find({ user: userId })
@@ -363,7 +229,6 @@ export const getPaymentHistory = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: "Payment history retrieved successfully",
       registrations: registrations.map((reg: any) => ({
         id: reg._id,
         status: reg.status,
@@ -385,11 +250,8 @@ export const getPaymentHistory = async (req: Request, res: Response) => {
         pages: Math.ceil(total / Number(limit)),
       },
     });
-  } catch (error) {
-    console.error("Get payment history error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to get payment history",
-    });
+  } catch (err) {
+    console.error("getPaymentHistory error:", err);
+    return res.status(500).json({ success: false, error: "Failed to get payment history" });
   }
 };

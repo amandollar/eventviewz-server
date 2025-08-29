@@ -8,12 +8,12 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const payment_controller_1 = require("../controllers/payment.controller");
 const rateLimit_middleware_1 = require("../middlewares/rateLimit.middleware");
 const paymentRouter = express_1.default.Router();
-// All routes require authentication
+// 🔔 Webhook (must be unauthenticated, Razorpay calls this directly)
+paymentRouter.post("/webhook", payment_controller_1.razorpayWebhook);
+// All other routes require authentication
 paymentRouter.use(auth_middleware_1.authMiddleware);
 // Create payment order for event registration
 paymentRouter.post("/create-order", rateLimit_middleware_1.paymentLimiter, payment_controller_1.createPaymentOrder);
-// Verify payment after successful transaction
-paymentRouter.post("/verify", rateLimit_middleware_1.paymentLimiter, payment_controller_1.verifyPayment);
 // Get payment status for a registration
 paymentRouter.get("/status/:registrationId", payment_controller_1.getPaymentStatus);
 // Cancel payment order

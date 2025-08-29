@@ -2,23 +2,23 @@ import express from "express";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { 
   createPaymentOrder, 
-  verifyPayment, 
   getPaymentStatus, 
   cancelPaymentOrder, 
-  getPaymentHistory 
+  getPaymentHistory, 
+  razorpayWebhook 
 } from "../controllers/payment.controller";
 import { paymentLimiter } from "../middlewares/rateLimit.middleware";
 
 const paymentRouter = express.Router();
 
-// All routes require authentication
+//  Webhook (must be unauthenticated, Razorpay calls this directly)
+paymentRouter.post("/webhook", razorpayWebhook);
+
+// All other routes require authentication
 paymentRouter.use(authMiddleware);
 
 // Create payment order for event registration
 paymentRouter.post("/create-order", paymentLimiter, createPaymentOrder);
-
-// Verify payment after successful transaction
-paymentRouter.post("/verify", paymentLimiter, verifyPayment);
 
 // Get payment status for a registration
 paymentRouter.get("/status/:registrationId", getPaymentStatus);

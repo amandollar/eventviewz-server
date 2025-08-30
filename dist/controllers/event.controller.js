@@ -5,10 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteEvent = exports.updateEvent = exports.getEventById = exports.getEvents = exports.createEvent = void 0;
 const Event_1 = __importDefault(require("../models/Event"));
-// Create a new event
+// Create new event
 const createEvent = async (req, res) => {
     try {
-        const { title, description, date, startTime, endTime, venue, location, category, participants, maxParticipants } = req.body;
+        const { title, description, date, startTime, endTime, venue, location, category, participants, maxParticipants, tickets } = req.body;
         const image = req.file?.path;
         // Get user ID from authenticated user (from JWT token)
         const createdBy = req.user?.id;
@@ -25,8 +25,9 @@ const createEvent = async (req, res) => {
             venue,
             location,
             category,
-            createdBy, // Now comes from authenticated user
+            createdBy, //by authenticated user
             participants: participants || [],
+            tickets,
             maxParticipants,
             currentParticipants: participants ? participants.length : 0,
             image,

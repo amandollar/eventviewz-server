@@ -1,11 +1,11 @@
-// src/validators/event.schema.ts
+
 import { z } from "zod";
 
 // Ticket schema
 export const ticketSchema = z.object({
   type: z.string().min(1, "Ticket type is required"),
-  price: z.number().min(0, "Price must be at least 0"),
-  available: z.number().min(0, "Available tickets must be 0 or more").default(100),
+  price: z.coerce.number().min(0, "Price must be at least 0"),
+  available: z.coerce.number().min(0, "Available tickets must be 0 or more").default(100),
 });
 
 // File upload schema for multer

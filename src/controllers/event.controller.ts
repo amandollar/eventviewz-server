@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import Event from "../models/Event";
 
-// Create a new event
+// Create new event
 export const createEvent = async (req: Request, res: Response) => {
     try {
-        const { title, description, date, startTime, endTime, venue, location, category, participants, maxParticipants } = req.body;
+        const { title, description, date, startTime, endTime, venue, location, category, participants, maxParticipants, tickets } = req.body;
         const image = req.file?.path;
         
         // Get user ID from authenticated user (from JWT token)
@@ -24,8 +24,9 @@ export const createEvent = async (req: Request, res: Response) => {
             venue,
             location,
             category,
-            createdBy, // Now comes from authenticated user
+            createdBy, //by authenticated user
             participants: participants || [],
+            tickets,
             maxParticipants,
             currentParticipants: participants ? participants.length : 0,
             image,

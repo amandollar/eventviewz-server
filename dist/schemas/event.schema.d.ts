@@ -1,8 +1,8 @@
 import { z } from "zod";
 export declare const ticketSchema: z.ZodObject<{
     type: z.ZodString;
-    price: z.ZodNumber;
-    available: z.ZodDefault<z.ZodNumber>;
+    price: z.ZodCoercedNumber<unknown>;
+    available: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
 }, z.core.$strip>;
 export declare const fileSchema: z.ZodOptional<z.ZodObject<{
     fieldname: z.ZodString;
@@ -34,8 +34,8 @@ export declare const createEventSchema: z.ZodObject<{
         isActive: z.ZodDefault<z.ZodOptional<z.ZodCoercedBoolean<unknown>>>;
         tickets: z.ZodOptional<z.ZodArray<z.ZodObject<{
             type: z.ZodString;
-            price: z.ZodNumber;
-            available: z.ZodDefault<z.ZodNumber>;
+            price: z.ZodCoercedNumber<unknown>;
+            available: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
         }, z.core.$strip>>>;
     }, z.core.$strip>;
     file: z.ZodOptional<z.ZodObject<{
@@ -68,8 +68,8 @@ export declare const updateEventSchema: z.ZodObject<{
         isActive: z.ZodOptional<z.ZodCoercedBoolean<unknown>>;
         tickets: z.ZodOptional<z.ZodArray<z.ZodObject<{
             type: z.ZodString;
-            price: z.ZodNumber;
-            available: z.ZodDefault<z.ZodNumber>;
+            price: z.ZodCoercedNumber<unknown>;
+            available: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
         }, z.core.$strip>>>;
     }, z.core.$strip>;
     file: z.ZodOptional<z.ZodObject<{
@@ -108,8 +108,8 @@ export declare const updateEventWithIdSchema: z.ZodObject<{
         isActive: z.ZodOptional<z.ZodCoercedBoolean<unknown>>;
         tickets: z.ZodOptional<z.ZodArray<z.ZodObject<{
             type: z.ZodString;
-            price: z.ZodNumber;
-            available: z.ZodDefault<z.ZodNumber>;
+            price: z.ZodCoercedNumber<unknown>;
+            available: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
         }, z.core.$strip>>>;
     }, z.core.$strip>;
     file: z.ZodOptional<z.ZodObject<{

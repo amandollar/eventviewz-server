@@ -1,13 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateEventWithIdSchema = exports.eventIdSchema = exports.updateEventSchema = exports.createEventSchema = exports.fileSchema = exports.ticketSchema = void 0;
-// src/validators/event.schema.ts
 const zod_1 = require("zod");
 // Ticket schema
 exports.ticketSchema = zod_1.z.object({
     type: zod_1.z.string().min(1, "Ticket type is required"),
-    price: zod_1.z.number().min(0, "Price must be at least 0"),
-    available: zod_1.z.number().min(0, "Available tickets must be 0 or more").default(100),
+    price: zod_1.z.coerce.number().min(0, "Price must be at least 0"),
+    available: zod_1.z.coerce.number().min(0, "Available tickets must be 0 or more").default(100),
 });
 // File upload schema for multer
 exports.fileSchema = zod_1.z.object({

@@ -30,7 +30,7 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       tshirtSize,
       notes,
     } = req.body;
-    const userId = (req as any).user._id;
+    const userId = (req as any).user.id;
 
     if (!eventId || !ticketType) {
       return res.status(400).json({ success: false, error: "Event ID and ticket type are required" });
@@ -52,10 +52,15 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
     const existing = await Registration.findOne({ user: userId, event: eventId });
     if (existing) return res.status(400).json({ success: false, error: "Already registered for this event" });
 
+
+    const eventIdStr = String(eventId); // ensures it’s a string
+    const userIdStr = String(userId);
+
+
     const order = await razorpay.orders.create({
       amount: ticket.price * 100,
       currency: "INR",
-      receipt: `event_${eventId}_user_${userId}_${Date.now()}`,
+      receipt: `e${eventIdStr.slice(-6)}_u${userIdStr.slice(-6)}_${Date.now()}`.slice(0, 40),
       notes: { eventId, userId, ticketType, eventTitle: event.title },
     });
 

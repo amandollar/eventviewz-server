@@ -13,6 +13,8 @@ const index_routes_1 = __importDefault(require("./routes/index.routes"));
 const rateLimit_middleware_1 = require("./middlewares/rateLimit.middleware");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT;
+// Add this before using rateLimit middleware
+app.set('trust proxy', 1);
 // Global rate limiting - applies to all routes
 app.use(rateLimit_middleware_1.generalLimiter);
 // Middleware

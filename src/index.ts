@@ -11,6 +11,12 @@ import { generalLimiter } from "./middlewares/rateLimit.middleware";
 const app = express();
 const PORT = process.env.PORT;
 
+
+
+
+// Add this before using rateLimit middleware
+app.set('trust proxy', 1);
+
 // Global rate limiting - applies to all routes
 app.use(generalLimiter);
 

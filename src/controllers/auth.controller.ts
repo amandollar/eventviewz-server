@@ -79,7 +79,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        image: user.image,
+        image: user.image || null,
         role: user.role,
         isEmailVerified: user.isEmailVerified
       },
@@ -142,6 +142,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        image: user.image || null,
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         lastLogin: user.lastLogin
@@ -187,10 +188,15 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
             user = await User.create({ 
                 email: data.email, 
                 name: data.name,
+                image: data.picture, // Google provides profile picture URL
                 googleId: data.id,
                 isEmailVerified: true
             });
         } else {
+            // Update profile picture if it changed
+            if (data.picture && user.image !== data.picture) {
+                user.image = data.picture;
+            }
             user.lastLogin = new Date();
             await user.save();
         }
@@ -282,7 +288,7 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
             _id: user._id,
             name: user.name,
             email: user.email,
-            image: user.image,
+            image: user.image || null,
             role: user.role,
             isEmailVerified: user.isEmailVerified,
             lastLogin: user.lastLogin
@@ -302,6 +308,10 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    console.log('Update user request - userId:', userId);
+    console.log('Update user request - body:', req.body);
+    console.log('Update user request - file:', req.file);
+
     const updates: any = {};
     
     // Handle name update from body
@@ -312,7 +322,10 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     // Handle image update from file upload
     if (req.file) {
       updates.image = req.file.path; // Cloudinary URL from multer
+      console.log('Image update - new path:', req.file.path);
     }
+
+    console.log('Updates to apply:', updates);
 
     // Only allow name and image updates (prevent role/email tampering)
     const allowedFields = ["name", "image"];
@@ -322,6 +335,8 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
         filteredUpdates[field] = updates[field];
       }
     }
+
+    console.log('Filtered updates:', filteredUpdates);
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
@@ -333,6 +348,14 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       res.status(404).json({ error: "User not found" });
       return;
     }
+
+    console.log('Updated user response:', {
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      image: updatedUser.image,
+      role: updatedUser.role
+    });
 
     res.json(updatedUser);
   } catch (error) {

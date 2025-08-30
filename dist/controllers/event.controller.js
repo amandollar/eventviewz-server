@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteEvent = exports.updateEvent = exports.getEventById = exports.getEvents = exports.createEvent = void 0;
+exports.getEventsByCategory = exports.searchEvents = exports.deleteEvent = exports.updateEvent = exports.getEventById = exports.getEvents = exports.createEvent = void 0;
 const Event_1 = __importDefault(require("../models/Event"));
 // Create new event
 const createEvent = async (req, res) => {
@@ -139,4 +139,64 @@ const deleteEvent = async (req, res) => {
     }
 };
 exports.deleteEvent = deleteEvent;
+// Search events by title or description
+const searchEvents = async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q || typeof q !== 'string') {
+            res.status(400).json({
+                success: false,
+                message: "Search query is required",
+            });
+            return;
+        }
+        const events = await Event_1.default.find({
+            $text: { $search: q },
+            isActive: true
+        }).sort({ score: { $meta: "textScore" } });
+        res.status(200).json({
+            success: true,
+            message: "Events searched successfully",
+            events,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to search events",
+            error: error.message,
+        });
+    }
+};
+exports.searchEvents = searchEvents;
+// Get events by category
+const getEventsByCategory = async (req, res) => {
+    try {
+        const { category } = req.params;
+        if (!category) {
+            res.status(400).json({
+                success: false,
+                message: "Category is required",
+            });
+            return;
+        }
+        const events = await Event_1.default.find({
+            category: category.toLowerCase(),
+            isActive: true
+        }).sort({ date: 1 });
+        res.status(200).json({
+            success: true,
+            message: "Events fetched successfully",
+            events,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch events by category",
+            error: error.message,
+        });
+    }
+};
+exports.getEventsByCategory = getEventsByCategory;
 //# sourceMappingURL=event.controller.js.map

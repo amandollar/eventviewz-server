@@ -34,9 +34,9 @@ export const updateRegistrationSchema = z.object({
     dietaryPreferences: z.enum(["Vegetarian", "Non-Vegetarian", "Vegan", "No Preference"]).optional(),
     specialRequirements: z.string().max(200, "Special requirements too long").optional(),
     emergencyContact: z.object({
-        name: z.string().min(1, "Emergency contact name is required"),
-        phone: z.string().min(10, "Emergency contact phone is required"),
-        relationship: z.string().min(1, "Relationship is required")
+        name: z.string().min(1, "Emergency contact name is required").optional(),
+        phone: z.string().min(10, "Emergency contact phone is required").optional(),
+        relationship: z.string().min(1, "Relationship is required").optional()
     }).optional(),
     tshirtSize: z.enum(["XS", "S", "M", "L", "XL", "XXL", "No T-shirt"]).optional(),
     notes: z.string().max(300, "Notes too long").optional()

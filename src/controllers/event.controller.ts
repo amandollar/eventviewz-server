@@ -138,3 +138,67 @@ export const deleteEvent = async (req: Request, res: Response) => {
         });
     }
 };
+
+// Search events by title or description
+export const searchEvents = async (req: Request, res: Response) => {
+    try {
+        const { q } = req.query;
+        
+        if (!q || typeof q !== 'string') {
+            res.status(400).json({
+                success: false,
+                message: "Search query is required",
+            });
+            return;
+        }
+
+        const events = await Event.find({
+            $text: { $search: q },
+            isActive: true
+        }).sort({ score: { $meta: "textScore" } });
+
+        res.status(200).json({
+            success: true,
+            message: "Events searched successfully",
+            events,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to search events",
+            error: (error as any).message,
+        });
+    }
+};
+
+// Get events by category
+export const getEventsByCategory = async (req: Request, res: Response) => {
+    try {
+        const { category } = req.params;
+        
+        if (!category) {
+            res.status(400).json({
+                success: false,
+                message: "Category is required",
+            });
+            return;
+        }
+
+        const events = await Event.find({
+            category: category.toLowerCase(),
+            isActive: true
+        }).sort({ date: 1 });
+
+        res.status(200).json({
+            success: true,
+            message: "Events fetched successfully",
+            events,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch events by category",
+            error: (error as any).message,
+        });
+    }
+};

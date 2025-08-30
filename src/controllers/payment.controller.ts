@@ -79,7 +79,7 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       yearOfStudy,
       dietaryPreferences,
       specialRequirements,
-      emergencyContact,
+      emergencyContact: emergencyContact?.name && emergencyContact?.phone && emergencyContact?.relationship ? emergencyContact : undefined,
       tshirtSize,
       notes,
     });
@@ -89,8 +89,19 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
     return res.status(201).json({
       success: true,
       message: "Payment order created successfully",
-      order: { id: order.id, amount: order.amount, currency: order.currency, receipt: order.receipt },
-      registration: { id: registration._id, status: registration.status, ticketType, amount: registration.amount },
+      order: { 
+        id: order.id, 
+        amount: order.amount, 
+        currency: order.currency, 
+        receipt: order.receipt 
+      },
+      registration: { 
+        id: registration._id, 
+        status: registration.status, 
+        ticketType, 
+        amount: registration.amount 
+      },
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID || "rzp_test_1234567890"
     });
   } catch (err) {
     console.error("createPaymentOrder error:", err);
@@ -152,7 +163,7 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
 export const getPaymentStatus = async (req: Request, res: Response) => {
   try {
     const { registrationId } = req.params;
-    const userId = (req as any).user._id;
+    const userId = (req as any).user.id;
 
     const registration = await Registration.findById(registrationId)
       .populate("event", "title date venue")
@@ -191,7 +202,7 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
 export const cancelPaymentOrder = async (req: Request, res: Response) => {
   try {
     const { registrationId } = req.params;
-    const userId = (req as any).user._id;
+    const userId = (req as any).user.id;
 
     const registration = await Registration.findById(registrationId);
     if (!registration) return res.status(404).json({ success: false, error: "Registration not found" });
@@ -222,7 +233,7 @@ export const cancelPaymentOrder = async (req: Request, res: Response) => {
 // ===================
 export const getPaymentHistory = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user._id;
+    const userId = (req as any).user.id;
     const { page = 1, limit = 10 } = req.query;
 
     const registrations = await Registration.find({ user: userId })

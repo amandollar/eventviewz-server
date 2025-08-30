@@ -22,7 +22,7 @@ export const registerForEvent = async (req: Request, res: Response) => {
             tshirtSize,
             notes
         } = req.body;
-        const userId = (req as any).user._id;
+        const userId = (req as any).user.id;
 
         // Check if event exists and is active
         const event = await Event.findById(eventId);
@@ -82,7 +82,7 @@ export const registerForEvent = async (req: Request, res: Response) => {
             yearOfStudy,
             dietaryPreferences,
             specialRequirements,
-            emergencyContact,
+            emergencyContact: emergencyContact?.name && emergencyContact?.phone && emergencyContact?.relationship ? emergencyContact : undefined,
             tshirtSize,
             notes,
             confirmedAt: new Date()
@@ -113,7 +113,7 @@ export const registerForEvent = async (req: Request, res: Response) => {
 // Update registration details
 export const updateRegistration = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user._id;
+        const userId = (req as any).user.id;
         const { 
             ticketType,
             phoneNumber,
@@ -179,7 +179,7 @@ export const updateRegistration = async (req: Request, res: Response) => {
 // Get user's registrations
 export const getUserRegistrations = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user._id;
+        const userId = (req as any).user.id;
         const { status } = req.query;
 
         let filter: any = { user: userId };
@@ -271,7 +271,7 @@ export const updateRegistrationStatus = async (req: Request, res: Response) => {
         // Check if user can update this registration
         const event = registration.event as any;
         if (user.role !== "admin" && user.role !== "organizer" && 
-            event.createdBy.toString() !== user._id.toString()) {
+            event.createdBy.toString() !== user.id.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "You don't have permission to update this registration"
@@ -304,7 +304,7 @@ export const updateRegistrationStatus = async (req: Request, res: Response) => {
 export const cancelRegistration = async (req: Request, res: Response) => {
     try {
         const { registrationId } = req.params;
-        const userId = (req as any).user._id;
+        const userId = (req as any).user.id;
 
         const registration = await Registration.findById(registrationId);
         if (!registration) {
@@ -356,7 +356,7 @@ export const cancelRegistration = async (req: Request, res: Response) => {
 export const getHallTicket = async (req: Request, res: Response) => {
     try {
         const { registrationId } = req.params;
-        const userId = (req as any).user._id;
+        const userId = (req as any).user.id;
 
         const registration = await Registration.findById(registrationId)
             .populate("user", "name email image")

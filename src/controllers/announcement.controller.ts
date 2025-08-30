@@ -29,7 +29,7 @@ export const createAnnouncement = async (req: Request, res: Response) => {
         return res.status(201).json({
             success: true,
             message: "Announcement created successfully",
-            data: announcement
+            announcement: announcement
         });
     } catch (error) {
         return res.status(500).json({
@@ -43,14 +43,14 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 // Get all announcements (public access)
 export const getAnnouncements = async (req: Request, res: Response) => {
     try {
-        const announcements = await Announcement.find()
+        const announcements = await Announcement.find({ isActive: true })
             .populate("createdBy", "name email")
             .sort({ createdAt: -1 });
 
         return res.status(200).json({
             success: true,
             message: "Announcements fetched successfully",
-            data: announcements,
+            announcements: announcements,  // Changed from 'data' to 'announcements'
         });
     } catch (error) {
         return res.status(500).json({
@@ -79,7 +79,7 @@ export const getAnnouncementById = async (req: Request, res: Response) => {
         return res.status(200).json({
             success: true,
             message: "Announcement fetched successfully",
-            data: announcement
+            announcement: announcement  // Changed from 'data' to 'announcement'
         });
     } catch (error) {
         return res.status(500).json({
@@ -122,7 +122,7 @@ export const updateAnnouncement = async (req: Request, res: Response) => {
         return res.status(200).json({
             success: true,
             message: "Announcement updated successfully",
-            data: updatedAnnouncement
+            announcement: updatedAnnouncement  // Changed from 'data' to 'announcement'
         });
     } catch (error) {
         return res.status(500).json({
@@ -170,6 +170,49 @@ export const deleteAnnouncement = async (req: Request, res: Response) => {
     }
 };
 
+// Toggle announcement status (ADMIN ONLY)
+export const toggleAnnouncementStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const adminUser = (req as any).user;
+
+        // Check if user is admin
+        if (adminUser.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Only admins can toggle announcement status"
+            });
+        }
+
+        const announcement = await Announcement.findById(id);
+        if (!announcement) {
+            return res.status(404).json({
+                success: false,
+                message: "Announcement not found"
+            });
+        }
+
+        // Toggle the isActive status
+        announcement.isActive = !announcement.isActive;
+        await announcement.save();
+
+        // Populate creator details
+        await announcement.populate("createdBy", "name email");
+
+        return res.status(200).json({
+            success: true,
+            message: `Announcement ${announcement.isActive ? 'activated' : 'deactivated'} successfully`,
+            announcement: announcement
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to toggle announcement status",
+            error: (error as any).message
+        });
+    }
+};
+
 // Get announcements by type (public access)
 export const getAnnouncementsByType = async (req: Request, res: Response) => {
     try {
@@ -192,7 +235,7 @@ export const getAnnouncementsByType = async (req: Request, res: Response) => {
         return res.status(200).json({
             success: true,
             message: `${type} announcements fetched successfully`,
-            data: announcements,
+            announcements: announcements,  // Changed from 'data' to 'announcements'
             pagination: {
                 page: Number(page),
                 limit: Number(limit),
@@ -222,7 +265,7 @@ export const getLatestAnnouncements = async (req: Request, res: Response) => {
         return res.status(200).json({
             success: true,
             message: "Latest announcements fetched successfully",
-            data: announcements
+            announcements: announcements  // Changed from 'data' to 'announcements'
         });
     } catch (error) {
         return res.status(500).json({

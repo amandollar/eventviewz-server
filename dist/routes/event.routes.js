@@ -18,6 +18,8 @@ rateLimit_middleware_1.uploadLimiter, // Limit file uploads
 auth_middleware_1.authMiddleware, (0, role_middleware_1.authorizeRoles)("admin", "organizer"), multer_middleware_1.default.single("image"), (0, validate_middleware_1.validateSchema)(event_schema_1.createEventSchema), event_controller_1.createEvent);
 // Public read endpoints - moderate rate limiting
 eventRouter.get("/", rateLimit_middleware_1.generalLimiter, event_controller_1.getEvents);
+eventRouter.get("/search", rateLimit_middleware_1.generalLimiter, event_controller_1.searchEvents);
+eventRouter.get("/category/:category", rateLimit_middleware_1.generalLimiter, event_controller_1.getEventsByCategory);
 eventRouter.get("/:id", rateLimit_middleware_1.generalLimiter, event_controller_1.getEventById);
 // Event modification - apply strict rate limiting and upload limiting
 eventRouter.put("/:id", rateLimit_middleware_1.eventCreationLimiter, // Limit event updates

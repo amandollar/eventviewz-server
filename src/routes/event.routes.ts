@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createEvent, getEvents, getEventById, updateEvent, deleteEvent } from "../controllers/event.controller";
+import { createEvent, getEvents, getEventById, updateEvent, deleteEvent, searchEvents, getEventsByCategory } from "../controllers/event.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/role.middleware";
 import { validateSchema } from "../middlewares/validate.middleware";
@@ -22,6 +22,8 @@ eventRouter.post("/",
 
 // Public read endpoints - moderate rate limiting
 eventRouter.get("/", generalLimiter, getEvents);
+eventRouter.get("/search", generalLimiter, searchEvents);
+eventRouter.get("/category/:category", generalLimiter, getEventsByCategory);
 eventRouter.get("/:id", generalLimiter, getEventById);
 
 // Event modification - apply strict rate limiting and upload limiting

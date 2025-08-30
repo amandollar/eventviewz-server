@@ -35,9 +35,9 @@ exports.updateRegistrationSchema = zod_1.z.object({
     dietaryPreferences: zod_1.z.enum(["Vegetarian", "Non-Vegetarian", "Vegan", "No Preference"]).optional(),
     specialRequirements: zod_1.z.string().max(200, "Special requirements too long").optional(),
     emergencyContact: zod_1.z.object({
-        name: zod_1.z.string().min(1, "Emergency contact name is required"),
-        phone: zod_1.z.string().min(10, "Emergency contact phone is required"),
-        relationship: zod_1.z.string().min(1, "Relationship is required")
+        name: zod_1.z.string().min(1, "Emergency contact name is required").optional(),
+        phone: zod_1.z.string().min(10, "Emergency contact phone is required").optional(),
+        relationship: zod_1.z.string().min(1, "Relationship is required").optional()
     }).optional(),
     tshirtSize: zod_1.z.enum(["XS", "S", "M", "L", "XL", "XXL", "No T-shirt"]).optional(),
     notes: zod_1.z.string().max(300, "Notes too long").optional()

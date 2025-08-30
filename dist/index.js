@@ -17,11 +17,14 @@ const PORT = process.env.PORT;
 app.set('trust proxy', 1);
 // Global rate limiting - applies to all routes
 app.use(rateLimit_middleware_1.generalLimiter);
-// Middleware
+// CORS configuration - Fixed for credentials support
 app.use((0, cors_1.default)({
-    origin: "*",
-    credentials: true
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
+// Middleware
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
 app.get("/", (_req, res) => {

@@ -22,5 +22,6 @@ announcementRouter.use((0, role_middleware_1.authorizeRoles)("admin"));
 announcementRouter.post("/", (0, validate_middleware_1.validateSchema)(announcement_schema_1.createAnnouncementSchema), announcement_controller_1.createAnnouncement);
 announcementRouter.put("/:id", (0, validate_middleware_1.validateSchema)(announcement_schema_1.updateAnnouncementSchema), announcement_controller_1.updateAnnouncement);
 announcementRouter.delete("/:id", announcement_controller_1.deleteAnnouncement);
+announcementRouter.patch("/:id/toggle", announcement_controller_1.toggleAnnouncementStatus);
 exports.default = announcementRouter;
 //# sourceMappingURL=announcement.routes.js.map

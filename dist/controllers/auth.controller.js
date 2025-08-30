@@ -60,7 +60,7 @@ const register = async (req, res) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
-                image: user.image,
+                image: user.image || null,
                 role: user.role,
                 isEmailVerified: user.isEmailVerified
             },
@@ -114,6 +114,7 @@ const login = async (req, res) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                image: user.image || null,
                 role: user.role,
                 isEmailVerified: user.isEmailVerified,
                 lastLogin: user.lastLogin
@@ -153,11 +154,16 @@ const googleCallback = async (req, res) => {
             user = await User_1.default.create({
                 email: data.email,
                 name: data.name,
+                image: data.picture, // Google provides profile picture URL
                 googleId: data.id,
                 isEmailVerified: true
             });
         }
         else {
+            // Update profile picture if it changed
+            if (data.picture && user.image !== data.picture) {
+                user.image = data.picture;
+            }
             user.lastLogin = new Date();
             await user.save();
         }
@@ -228,7 +234,7 @@ const getCurrentUser = async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
-            image: user.image,
+            image: user.image || null,
             role: user.role,
             isEmailVerified: user.isEmailVerified,
             lastLogin: user.lastLogin
@@ -247,6 +253,9 @@ const updateUser = async (req, res) => {
             res.status(401).json({ error: "Not authenticated" });
             return;
         }
+        console.log('Update user request - userId:', userId);
+        console.log('Update user request - body:', req.body);
+        console.log('Update user request - file:', req.file);
         const updates = {};
         // Handle name update from body
         if (req.body.name !== undefined) {
@@ -255,7 +264,9 @@ const updateUser = async (req, res) => {
         // Handle image update from file upload
         if (req.file) {
             updates.image = req.file.path; // Cloudinary URL from multer
+            console.log('Image update - new path:', req.file.path);
         }
+        console.log('Updates to apply:', updates);
         // Only allow name and image updates (prevent role/email tampering)
         const allowedFields = ["name", "image"];
         const filteredUpdates = {};
@@ -264,11 +275,19 @@ const updateUser = async (req, res) => {
                 filteredUpdates[field] = updates[field];
             }
         }
+        console.log('Filtered updates:', filteredUpdates);
         const updatedUser = await User_1.default.findByIdAndUpdate(userId, { $set: filteredUpdates }, { new: true, runValidators: true }).select("-refreshToken -__v");
         if (!updatedUser) {
             res.status(404).json({ error: "User not found" });
             return;
         }
+        console.log('Updated user response:', {
+            _id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            image: updatedUser.image,
+            role: updatedUser.role
+        });
         res.json(updatedUser);
     }
     catch (error) {

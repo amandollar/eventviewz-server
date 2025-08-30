@@ -64,7 +64,7 @@ const createPaymentOrder = async (req, res) => {
             yearOfStudy,
             dietaryPreferences,
             specialRequirements,
-            emergencyContact,
+            emergencyContact: emergencyContact?.name && emergencyContact?.phone && emergencyContact?.relationship ? emergencyContact : undefined,
             tshirtSize,
             notes,
         });
@@ -72,8 +72,19 @@ const createPaymentOrder = async (req, res) => {
         return res.status(201).json({
             success: true,
             message: "Payment order created successfully",
-            order: { id: order.id, amount: order.amount, currency: order.currency, receipt: order.receipt },
-            registration: { id: registration._id, status: registration.status, ticketType, amount: registration.amount },
+            order: {
+                id: order.id,
+                amount: order.amount,
+                currency: order.currency,
+                receipt: order.receipt
+            },
+            registration: {
+                id: registration._id,
+                status: registration.status,
+                ticketType,
+                amount: registration.amount
+            },
+            razorpayKeyId: process.env.RAZORPAY_KEY_ID || "rzp_test_1234567890"
         });
     }
     catch (err) {
@@ -131,7 +142,7 @@ exports.razorpayWebhook = razorpayWebhook;
 const getPaymentStatus = async (req, res) => {
     try {
         const { registrationId } = req.params;
-        const userId = req.user._id;
+        const userId = req.user.id;
         const registration = await Register_1.default.findById(registrationId)
             .populate("event", "title date venue")
             .populate("user", "name email");
@@ -169,7 +180,7 @@ exports.getPaymentStatus = getPaymentStatus;
 const cancelPaymentOrder = async (req, res) => {
     try {
         const { registrationId } = req.params;
-        const userId = req.user._id;
+        const userId = req.user.id;
         const registration = await Register_1.default.findById(registrationId);
         if (!registration)
             return res.status(404).json({ success: false, error: "Registration not found" });
@@ -199,7 +210,7 @@ exports.cancelPaymentOrder = cancelPaymentOrder;
 // ===================
 const getPaymentHistory = async (req, res) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user.id;
         const { page = 1, limit = 10 } = req.query;
         const registrations = await Register_1.default.find({ user: userId })
             .populate("event", "title date venue image")

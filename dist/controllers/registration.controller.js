@@ -12,7 +12,7 @@ const registrationSideEffects_1 = require("../utils/registrationSideEffects");
 const registerForEvent = async (req, res) => {
     try {
         const { eventId, ticketType, registrationNumber, phoneNumber, college, department, yearOfStudy, dietaryPreferences, specialRequirements, emergencyContact, tshirtSize, notes } = req.body;
-        const userId = req.user._id;
+        const userId = req.user.id;
         // Check if event exists and is active
         const event = await Event_1.default.findById(eventId);
         if (!event) {
@@ -65,7 +65,7 @@ const registerForEvent = async (req, res) => {
             yearOfStudy,
             dietaryPreferences,
             specialRequirements,
-            emergencyContact,
+            emergencyContact: emergencyContact?.name && emergencyContact?.phone && emergencyContact?.relationship ? emergencyContact : undefined,
             tshirtSize,
             notes,
             confirmedAt: new Date()
@@ -94,7 +94,7 @@ exports.registerForEvent = registerForEvent;
 // Update registration details
 const updateRegistration = async (req, res) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user.id;
         const { ticketType, phoneNumber, college, department, yearOfStudy, dietaryPreferences, specialRequirements, emergencyContact, tshirtSize, notes } = req.body;
         // Find user's registration (assuming they want to update their latest registration)
         // You might want to add eventId to the request body to be more specific
@@ -154,7 +154,7 @@ exports.updateRegistration = updateRegistration;
 // Get user's registrations
 const getUserRegistrations = async (req, res) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user.id;
         const { status } = req.query;
         let filter = { user: userId };
         if (status) {
@@ -237,7 +237,7 @@ const updateRegistrationStatus = async (req, res) => {
         // Check if user can update this registration
         const event = registration.event;
         if (user.role !== "admin" && user.role !== "organizer" &&
-            event.createdBy.toString() !== user._id.toString()) {
+            event.createdBy.toString() !== user.id.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "You don't have permission to update this registration"
@@ -265,7 +265,7 @@ exports.updateRegistrationStatus = updateRegistrationStatus;
 const cancelRegistration = async (req, res) => {
     try {
         const { registrationId } = req.params;
-        const userId = req.user._id;
+        const userId = req.user.id;
         const registration = await Register_1.default.findById(registrationId);
         if (!registration) {
             return res.status(404).json({
@@ -314,7 +314,7 @@ exports.cancelRegistration = cancelRegistration;
 const getHallTicket = async (req, res) => {
     try {
         const { registrationId } = req.params;
-        const userId = req.user._id;
+        const userId = req.user.id;
         const registration = await Register_1.default.findById(registrationId)
             .populate("user", "name email image")
             .populate("event", "title date startTime endTime venue location category");

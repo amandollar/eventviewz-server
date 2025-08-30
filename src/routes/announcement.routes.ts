@@ -10,7 +10,8 @@ import {
     updateAnnouncement,
     deleteAnnouncement,
     getAnnouncementsByType,
-    getLatestAnnouncements
+    getLatestAnnouncements,
+    toggleAnnouncementStatus
 } from "../controllers/announcement.controller";
 import {
     createAnnouncementSchema,
@@ -32,5 +33,6 @@ announcementRouter.use(authorizeRoles("admin"));
 announcementRouter.post("/", validateSchema(createAnnouncementSchema), createAnnouncement);
 announcementRouter.put("/:id", validateSchema(updateAnnouncementSchema), updateAnnouncement);
 announcementRouter.delete("/:id", deleteAnnouncement);
+announcementRouter.patch("/:id/toggle", toggleAnnouncementStatus);
 
 export default announcementRouter;

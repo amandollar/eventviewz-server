@@ -60,9 +60,9 @@ export declare const updateRegistrationSchema: z.ZodObject<{
     }>>;
     specialRequirements: z.ZodOptional<z.ZodString>;
     emergencyContact: z.ZodOptional<z.ZodObject<{
-        name: z.ZodString;
-        phone: z.ZodString;
-        relationship: z.ZodString;
+        name: z.ZodOptional<z.ZodString>;
+        phone: z.ZodOptional<z.ZodString>;
+        relationship: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
     tshirtSize: z.ZodOptional<z.ZodEnum<{
         M: "M";

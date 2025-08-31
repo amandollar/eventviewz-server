@@ -17,14 +17,13 @@ app.set('trust proxy', 1);
 // Global rate limiting - applies to all routes
 app.use(generalLimiter);
 
-// CORS configuration - Fixed for credentials support
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Set-Cookie'],
 }));
-
 // Middleware
 app.use(express.json());
 app.use(cookieParser());

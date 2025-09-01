@@ -17,6 +17,9 @@ export interface IRegistration extends Document {
     refundedAt?: Date;
     hallTicket?: string;
     notes?: string;
+    isAttended: boolean;
+    attendedAt?: Date;
+    attendedBy?: IUser["_id"];
     registrationNumber: string;
     phoneNumber: string;
     college: string;

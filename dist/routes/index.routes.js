@@ -11,6 +11,7 @@ const announcement_routes_1 = __importDefault(require("./announcement.routes"));
 const sponsor_routes_1 = __importDefault(require("./sponsor.routes"));
 const payment_routes_1 = __importDefault(require("./payment.routes"));
 const organizerApplication_routes_1 = __importDefault(require("./organizerApplication.routes"));
+const certificate_routes_1 = __importDefault(require("./certificate.routes"));
 const indexRouter = (0, express_1.Router)();
 // Routes
 indexRouter.use('/auth', auth_routes_1.default);
@@ -20,5 +21,6 @@ indexRouter.use('/announcements', announcement_routes_1.default);
 indexRouter.use('/sponsors', sponsor_routes_1.default);
 indexRouter.use('/payments', payment_routes_1.default);
 indexRouter.use('/organizer-applications', organizerApplication_routes_1.default);
+indexRouter.use('/certificates', certificate_routes_1.default);
 exports.default = indexRouter;
 //# sourceMappingURL=index.routes.js.map

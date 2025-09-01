@@ -56,6 +56,10 @@ const registrationSchema = new mongoose_1.Schema({
     refundedAt: { type: Date, required: false },
     hallTicket: { type: String, required: false },
     notes: { type: String, required: false },
+    // Attendance tracking fields
+    isAttended: { type: Boolean, default: false },
+    attendedAt: { type: Date, required: false },
+    attendedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: false },
     // Enhanced user data fields
     registrationNumber: { type: String, required: true },
     phoneNumber: { type: String, required: true },

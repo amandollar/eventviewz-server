@@ -74,7 +74,7 @@ eventviewz-server/
 │   │   ├── Announcement.ts     # System announcements
 │   │   ├── Sponsor.ts          # Sponsor carousel
 │   │   ├── OrganizerApplication.ts # Organizer applications
-│   │   └── Cetificate.ts       # Event certificates
+│   │   └── Certificate.ts      # Event certificates (deprecated - use certificate system)
 │   │
 │   ├── 📁 routes/              # API endpoint definitions
 │   │   ├── index.routes.ts     # Main router configuration
@@ -84,7 +84,8 @@ eventviewz-server/
 │   │   ├── payment.routes.ts   # Payment endpoints
 │   │   ├── announcement.routes.ts # Announcement endpoints
 │   │   ├── sponsor.routes.ts   # Sponsor endpoints
-│   │   └── organizerApplication.routes.ts # Application endpoints
+│   │   ├── organizerApplication.routes.ts # Application endpoints
+│   │   └── certificate.routes.ts # Certificate & attendance endpoints
 │   │
 │   ├── 📁 middlewares/         # Request processing middleware
 │   │   ├── auth.middleware.ts  # JWT authentication
@@ -110,6 +111,7 @@ eventviewz-server/
 │   │   ├── cloudinary.ts      # Cloudinary configuration
 │   │   ├── jwt.ts             # JWT token utilities
 │   │   ├── hallTicket.ts      # Hall ticket generation
+│   │   ├── certificateGenerator.ts # PDF certificate generation
 │   │   └── registrationSideEffects.ts # Registration side effects
 │   │
 │   ├── 📁 libs/               # External library configurations
@@ -118,7 +120,14 @@ eventviewz-server/
 │   └── index.ts               # Server entry point
 │
 ├── 📁 docs/                   # Documentation
-│   ├── API_DOCUMENTATION   # Complete API reference
+│   ├── USER.md              # User management & authentication
+│   ├── EVENT.md             # Event management & tickets
+│   ├── REGISTRATION.md      # Registration system
+│   ├── PAYMENT.md           # Payment integration
+│   ├── ANNOUNCEMENT.md      # System announcements
+│   ├── SPONSOR.md           # Sponsor management
+│   ├── ORGANIZER_APPLICATION.md # Organizer applications
+│   └── CERTIFICATE.md       # Certificate & attendance system
 │         
 │
 ├── 📁 dist/                   # Compiled JavaScript (TypeScript output)
@@ -167,6 +176,18 @@ eventviewz-server/
 - **Rate Limiting**: Comprehensive API protection
 - **File Management**: Secure image upload and storage
 
+### **🏆 Certificate & Attendance System**
+- **Attendance Tracking**: Mark individual and bulk attendance for past events
+- **PDF Generation**: 3 beautiful certificate templates (Classic, Modern, Elegant)
+- **Advanced Theming**: 5 predefined themes + custom color support
+- **Real QR Codes**: Verifiable QR codes with event data
+- **Streaming Support**: Efficient PDF generation for better performance
+- **Customization**: Greetings, colors, logos, signatures, and font sizes
+- **Event Validation**: Only past events allow attendance marking
+- **Manager Controls**: Role-based access for admins/organizers
+- **Statistics**: Comprehensive attendance reports and analytics
+- **Input Validation**: Comprehensive option validation and error handling
+
 ## 🌐 API Endpoints
 
 ### **Base URL**: `http://localhost:5000/api/v1`
@@ -199,6 +220,13 @@ eventviewz-server/
 | `/organizer-applications` | POST | Submit application | ✅ |
   `/organizer-applications` | PUT | Update your application | ✅ |
 | `/organizer-applications/my-application` | GET | List your applications | ✅ |
+| `/certificates/attendance/:id` | POST | Mark individual attendance | ✅ (Admin/Organizer) |
+| `/certificates/attendance/bulk` | POST | Mark bulk attendance | ✅ (Admin/Organizer) |
+| `/certificates/generate/:id` | GET | Generate PDF certificate | ✅ (Admin/Organizer) |
+| `/certificates/data/:id` | GET | Get certificate data | ✅ (Admin/Organizer) |
+| `/certificates/event/:id/stats` | GET | Get attendance statistics | ✅ (Admin/Organizer) |
+| `/certificates/event/:id/registrations` | GET | Get event registrations | ✅ (Admin/Organizer) |
+| `/certificates/themes` | GET | Get certificate themes & options | ✅ (Admin/Organizer) |
 
 .
 .
@@ -261,6 +289,10 @@ interface IRegistration {
   dietaryPreferences?: string;
   emergencyContact?: EmergencyContact;
   hallTicket?: string;
+  // Attendance tracking
+  isAttended: boolean;
+  attendedAt?: Date;
+  attendedBy?: ObjectId; // Manager who marked attendance
 }
 ```
 
@@ -279,6 +311,37 @@ interface JWTPayload {
 ### **Token Expiry**
 - **Access Token**: 15 minutes
 - **Refresh Token**: 7 days
+
+## 🏆 Certificate System
+
+### **Attendance Tracking**
+- **Individual Attendance**: Mark single user attendance
+- **Bulk Attendance**: Mark multiple users at once
+- **Event Validation**: Only past events allow attendance marking
+- **Duplicate Prevention**: Cannot mark attendance twice
+
+### **Certificate Generation**
+- **PDF Templates**: Classic, Modern, and Elegant designs
+- **Advanced Theming**: 5 predefined themes + custom colors
+- **Real QR Codes**: Verifiable QR codes with event data
+- **Streaming Support**: Efficient PDF generation for better performance
+- **Customization**: Greetings, colors, logos, signatures, and font sizes
+- **Data Integration**: Automatic event and user information
+- **Download**: Direct PDF file download
+
+### **Manager Controls**
+- **Role-based Access**: Admin and Organizer roles only
+- **Event Statistics**: Comprehensive attendance reports
+- **Registration Management**: View all participants with status
+- **Bulk Operations**: Efficient mass management
+
+### **Security Features**
+- **Authentication Required**: Valid JWT tokens mandatory
+- **Event Validation**: Prevents future event attendance marking
+- **Data Integrity**: Certificates only for attended participants
+- **Input Validation**: All parameters validated and sanitized
+- **QR Code Security**: Verifiable QR codes for authenticity
+- **Option Validation**: Comprehensive validation of all certificate options
 
 ### **Password Requirements**
 - Minimum 8 characters
@@ -373,6 +436,7 @@ export const createEventSchema = z.object({
 - Google OAuth 2.0 credentials
 - Cloudinary account
 - Razorpay account
+- PDF generation support (PDFKit)
 
 ### **1. Clone Repository**
 ```bash

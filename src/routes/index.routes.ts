@@ -6,6 +6,7 @@ import announcementRouter from "./announcement.routes";
 import sponsorRouter from "./sponsor.routes";
 import paymentRouter from "./payment.routes";
 import organizerApplicationRouter from "./organizerApplication.routes";
+import certificateRouter from "./certificate.routes";
 
 const indexRouter = Router();
 
@@ -17,5 +18,6 @@ indexRouter.use('/announcements', announcementRouter);
 indexRouter.use('/sponsors', sponsorRouter);
 indexRouter.use('/payments', paymentRouter);
 indexRouter.use('/organizer-applications', organizerApplicationRouter);
+indexRouter.use('/certificates', certificateRouter);
 
 export default indexRouter;

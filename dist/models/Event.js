@@ -58,7 +58,7 @@ const eventSchema = new mongoose_1.Schema({
     maxParticipants: { type: Number, default: 100 },
     currentParticipants: { type: Number, default: 0, min: 0 },
     isActive: { type: Boolean, default: true },
-    // Ticket categories (VIP, Regular, etc
+    // Ticket categories (VIP, Regular, etc)
     tickets: { type: [ticketSchema], default: [], required: true },
 }, { timestamps: true });
 // Safe cascade delete middleware

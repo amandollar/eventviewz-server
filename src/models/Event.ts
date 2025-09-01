@@ -58,7 +58,7 @@ const eventSchema = new Schema<IEvent>(
 
     isActive: { type: Boolean, default: true },
 
-    // Ticket categories (VIP, Regular, etc
+    // Ticket categories (VIP, Regular, etc)
     tickets: { type: [ticketSchema], default: [] ,required: true},
   },
   { timestamps: true }

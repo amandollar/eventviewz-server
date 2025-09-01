@@ -20,6 +20,10 @@ export interface IRegistration extends Document {
   refundedAt?: Date;
   hallTicket?: string;
   notes?: string;
+  // Attendance tracking
+  isAttended: boolean;
+  attendedAt?: Date;
+  attendedBy?: IUser["_id"]; // Manager who marked attendance
   // Enhanced user data
   registrationNumber: string;
   phoneNumber: string;
@@ -57,6 +61,10 @@ const registrationSchema = new Schema<IRegistration>(
     refundedAt: { type: Date, required: false },
     hallTicket: { type: String, required: false },
     notes: { type: String, required: false },
+    // Attendance tracking fields
+    isAttended: { type: Boolean, default: false },
+    attendedAt: { type: Date, required: false },
+    attendedBy: { type: Schema.Types.ObjectId, ref: "User", required: false },
     // Enhanced user data fields
     registrationNumber: { type: String, required: true },
     phoneNumber: { type: String, required: true },

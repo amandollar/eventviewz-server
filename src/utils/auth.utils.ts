@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
-// Password hashing
+// Hash Password
 export const hashPassword = async (password: string): Promise<string> => {
   const saltRounds = 12;
   return await bcrypt.hash(password, saltRounds);

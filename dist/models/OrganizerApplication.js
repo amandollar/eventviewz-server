@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
+const cascadeDelete_1 = require("../utils/cascadeDelete");
 const organizerApplicationSchema = new mongoose_1.Schema({
     user: {
         type: mongoose_1.Schema.Types.ObjectId,
@@ -90,5 +91,37 @@ const organizerApplicationSchema = new mongoose_1.Schema({
 organizerApplicationSchema.index({ status: 1 });
 organizerApplicationSchema.index({ user: 1 });
 organizerApplicationSchema.index({ appliedAt: -1 });
+// Safe cascade delete middleware
+organizerApplicationSchema.pre("findOneAndDelete", async function (next) {
+    try {
+        const applicationId = this.getQuery()["_id"];
+        if (applicationId) {
+            console.log(`Organizer application deletion triggered, starting safe cascade delete for: ${applicationId}`);
+            await (0, cascadeDelete_1.cascadeDeleteOrganizerApplication)(applicationId.toString());
+        }
+        next();
+    }
+    catch (error) {
+        console.error("Error in organizer application cascade delete middleware:", error);
+        // Continue with deletion even if cascade fails
+        next();
+    }
+});
+// Also handle direct delete operations
+organizerApplicationSchema.pre("deleteOne", async function (next) {
+    try {
+        const applicationId = this.getQuery()["_id"];
+        if (applicationId) {
+            console.log(`Organizer application deletion triggered, starting safe cascade delete for: ${applicationId}`);
+            await (0, cascadeDelete_1.cascadeDeleteOrganizerApplication)(applicationId.toString());
+        }
+        next();
+    }
+    catch (error) {
+        console.error("Error in organizer application cascade delete middleware:", error);
+        // Continue with deletion even if cascade fails
+        next();
+    }
+});
 exports.default = mongoose_1.default.model("OrganizerApplication", organizerApplicationSchema);
 //# sourceMappingURL=OrganizerApplication.js.map

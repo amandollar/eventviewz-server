@@ -2,6 +2,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { IUser } from "./User";
 import { IEvent } from "./Event";
+import { cascadeDeleteRegistration } from "../utils/cascadeDelete";
 
 export interface IRegistration extends Document {
   user: IUser["_id"];
@@ -105,5 +106,37 @@ registrationSchema.index({ registrationNumber: 1 });
 registrationSchema.index({ college: 1 });
 registrationSchema.index({ department: 1 });
 registrationSchema.index({ yearOfStudy: 1 });
+
+// Safe cascade delete middleware
+registrationSchema.pre("findOneAndDelete", async function(this: any, next: Function) {
+  try {
+    const registrationId = this.getQuery()["_id"];
+    if (registrationId) {
+      console.log(`Registration deletion triggered, starting safe cascade delete for: ${registrationId}`);
+      await cascadeDeleteRegistration(registrationId.toString());
+    }
+    next();
+  } catch (error) {
+    console.error("Error in registration cascade delete middleware:", error);
+    // Continue with deletion even if cascade fails
+    next();
+  }
+});
+
+// Also handle direct delete operations
+registrationSchema.pre("deleteOne", async function(this: any, next: Function) {
+  try {
+    const registrationId = this.getQuery()["_id"];
+    if (registrationId) {
+      console.log(`Registration deletion triggered, starting safe cascade delete for: ${registrationId}`);
+      await cascadeDeleteRegistration(registrationId.toString());
+    }
+    next();
+  } catch (error) {
+    console.error("Error in registration cascade delete middleware:", error);
+    // Continue with deletion even if cascade fails
+    next();
+  }
+});
 
 export default mongoose.model<IRegistration>("Registration", registrationSchema);

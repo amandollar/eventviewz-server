@@ -32,11 +32,11 @@ export declare const createEventSchema: z.ZodObject<{
         participants: z.ZodOptional<z.ZodArray<z.ZodString>>;
         maxParticipants: z.ZodOptional<z.ZodCoercedNumber<unknown>>;
         isActive: z.ZodDefault<z.ZodOptional<z.ZodCoercedBoolean<unknown>>>;
-        tickets: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        tickets: z.ZodArray<z.ZodObject<{
             type: z.ZodString;
             price: z.ZodCoercedNumber<unknown>;
             available: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
-        }, z.core.$strip>>>;
+        }, z.core.$strip>>;
     }, z.core.$strip>;
     file: z.ZodOptional<z.ZodObject<{
         fieldname: z.ZodString;

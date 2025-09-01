@@ -1,5 +1,6 @@
 // src/models/Sponsor.ts
 import mongoose, { Schema, Document } from "mongoose";
+import { cascadeDeleteSponsor } from "../utils/cascadeDelete";
 
 export interface ISponsor extends Document {
   title: string;
@@ -40,6 +41,38 @@ sponsorSchema.pre('find', function() {
     isActive: true, 
     expiresAt: { $gt: new Date() } 
   });
+});
+
+// Safe cascade delete middleware
+sponsorSchema.pre("findOneAndDelete", async function(this: any, next: Function) {
+  try {
+    const sponsorId = this.getQuery()["_id"];
+    if (sponsorId) {
+      console.log(`Sponsor deletion triggered, starting safe cascade delete for: ${sponsorId}`);
+      await cascadeDeleteSponsor(sponsorId.toString());
+    }
+    next();
+  } catch (error) {
+    console.error("Error in sponsor cascade delete middleware:", error);
+    // Continue with deletion even if cascade fails
+    next();
+  }
+});
+
+// Also handle direct delete operations
+sponsorSchema.pre("deleteOne", async function(this: any, next: Function) {
+  try {
+    const sponsorId = this.getQuery()["_id"];
+    if (sponsorId) {
+      console.log(`Sponsor deletion triggered, starting safe cascade delete for: ${sponsorId}`);
+      await cascadeDeleteSponsor(sponsorId.toString());
+    }
+    next();
+  } catch (error) {
+    console.error("Error in sponsor cascade delete middleware:", error);
+    // Continue with deletion even if cascade fails
+    next();
+  }
 });
 
 export default mongoose.model<ISponsor>("Sponsor", sponsorSchema);

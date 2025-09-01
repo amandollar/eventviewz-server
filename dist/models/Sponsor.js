@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 // src/models/Sponsor.ts
 const mongoose_1 = __importStar(require("mongoose"));
+const cascadeDelete_1 = require("../utils/cascadeDelete");
 const sponsorSchema = new mongoose_1.Schema({
     title: { type: String, required: true, trim: true, maxlength: 100 },
     description: { type: String, required: true, trim: true, maxlength: 500 },
@@ -56,6 +57,38 @@ sponsorSchema.pre('find', function () {
         isActive: true,
         expiresAt: { $gt: new Date() }
     });
+});
+// Safe cascade delete middleware
+sponsorSchema.pre("findOneAndDelete", async function (next) {
+    try {
+        const sponsorId = this.getQuery()["_id"];
+        if (sponsorId) {
+            console.log(`Sponsor deletion triggered, starting safe cascade delete for: ${sponsorId}`);
+            await (0, cascadeDelete_1.cascadeDeleteSponsor)(sponsorId.toString());
+        }
+        next();
+    }
+    catch (error) {
+        console.error("Error in sponsor cascade delete middleware:", error);
+        // Continue with deletion even if cascade fails
+        next();
+    }
+});
+// Also handle direct delete operations
+sponsorSchema.pre("deleteOne", async function (next) {
+    try {
+        const sponsorId = this.getQuery()["_id"];
+        if (sponsorId) {
+            console.log(`Sponsor deletion triggered, starting safe cascade delete for: ${sponsorId}`);
+            await (0, cascadeDelete_1.cascadeDeleteSponsor)(sponsorId.toString());
+        }
+        next();
+    }
+    catch (error) {
+        console.error("Error in sponsor cascade delete middleware:", error);
+        // Continue with deletion even if cascade fails
+        next();
+    }
 });
 exports.default = mongoose_1.default.model("Sponsor", sponsorSchema);
 //# sourceMappingURL=Sponsor.js.map

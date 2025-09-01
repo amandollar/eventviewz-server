@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { IUser } from "./User";
+import { cascadeDeleteOrganizerApplication } from "../utils/cascadeDelete";
 
 export interface IOrganizerApplication extends Document {
   user: IUser["_id"];
@@ -74,5 +75,37 @@ const organizerApplicationSchema = new Schema<IOrganizerApplication>(
 organizerApplicationSchema.index({ status: 1 });
 organizerApplicationSchema.index({ user: 1 });
 organizerApplicationSchema.index({ appliedAt: -1 });
+
+// Safe cascade delete middleware
+organizerApplicationSchema.pre("findOneAndDelete", async function(this: any, next: Function) {
+  try {
+    const applicationId = this.getQuery()["_id"];
+    if (applicationId) {
+      console.log(`Organizer application deletion triggered, starting safe cascade delete for: ${applicationId}`);
+      await cascadeDeleteOrganizerApplication(applicationId.toString());
+    }
+    next();
+  } catch (error) {
+    console.error("Error in organizer application cascade delete middleware:", error);
+    // Continue with deletion even if cascade fails
+    next();
+  }
+});
+
+// Also handle direct delete operations
+organizerApplicationSchema.pre("deleteOne", async function(this: any, next: Function) {
+  try {
+    const applicationId = this.getQuery()["_id"];
+    if (applicationId) {
+      console.log(`Organizer application deletion triggered, starting safe cascade delete for: ${applicationId}`);
+      await cascadeDeleteOrganizerApplication(applicationId.toString());
+    }
+    next();
+  } catch (error) {
+    console.error("Error in organizer application cascade delete middleware:", error);
+    // Continue with deletion even if cascade fails
+    next();
+  }
+});
 
 export default mongoose.model<IOrganizerApplication>("OrganizerApplication", organizerApplicationSchema);

@@ -39,7 +39,7 @@ export const createEventSchema = z.object({
     participants: z.array(z.string()).optional(),
     maxParticipants: z.coerce.number().min(1).max(10000).optional(),
     isActive: z.coerce.boolean().optional().default(true),
-    tickets: z.array(ticketSchema).optional(),
+    tickets: z.array(ticketSchema),
   }),
   file: fileSchema // Image is now mandatory (removed .optional())
 }).refine((data) => {

@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 // src/models/Registration.ts
 const mongoose_1 = __importStar(require("mongoose"));
+const cascadeDelete_1 = require("../utils/cascadeDelete");
 const registrationSchema = new mongoose_1.Schema({
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
     event: { type: mongoose_1.Schema.Types.ObjectId, ref: "Event", required: true },
@@ -96,5 +97,37 @@ registrationSchema.index({ registrationNumber: 1 });
 registrationSchema.index({ college: 1 });
 registrationSchema.index({ department: 1 });
 registrationSchema.index({ yearOfStudy: 1 });
+// Safe cascade delete middleware
+registrationSchema.pre("findOneAndDelete", async function (next) {
+    try {
+        const registrationId = this.getQuery()["_id"];
+        if (registrationId) {
+            console.log(`Registration deletion triggered, starting safe cascade delete for: ${registrationId}`);
+            await (0, cascadeDelete_1.cascadeDeleteRegistration)(registrationId.toString());
+        }
+        next();
+    }
+    catch (error) {
+        console.error("Error in registration cascade delete middleware:", error);
+        // Continue with deletion even if cascade fails
+        next();
+    }
+});
+// Also handle direct delete operations
+registrationSchema.pre("deleteOne", async function (next) {
+    try {
+        const registrationId = this.getQuery()["_id"];
+        if (registrationId) {
+            console.log(`Registration deletion triggered, starting safe cascade delete for: ${registrationId}`);
+            await (0, cascadeDelete_1.cascadeDeleteRegistration)(registrationId.toString());
+        }
+        next();
+    }
+    catch (error) {
+        console.error("Error in registration cascade delete middleware:", error);
+        // Continue with deletion even if cascade fails
+        next();
+    }
+});
 exports.default = mongoose_1.default.model("Registration", registrationSchema);
 //# sourceMappingURL=Register.js.map

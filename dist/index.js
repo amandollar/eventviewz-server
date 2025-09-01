@@ -11,22 +11,27 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const db_1 = __importDefault(require("./libs/db"));
 const index_routes_1 = __importDefault(require("./routes/index.routes"));
 const rateLimit_middleware_1 = require("./middlewares/rateLimit.middleware");
+const helmet_1 = __importDefault(require("helmet"));
+//Express App
 const app = (0, express_1.default)();
-const PORT = process.env.PORT;
-// Add this before using rateLimit middleware
+const PORT = process.env.PORT || 5001;
+//Security Headers
+app.set("trust proxy", 1);
+app.use((0, helmet_1.default)());
+//Middlewares
 app.set('trust proxy', 1);
-// Global rate limiting - applies to all routes
-app.use(rateLimit_middleware_1.generalLimiter);
-// CORS configuration - Fixed for credentials support
+app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: process.env.ALLOWED_ORIGINS?.split(','),
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Set-Cookie'],
 }));
-// Middleware
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
+app.use(rateLimit_middleware_1.generalLimiter);
+//Routes
 app.get("/", (_req, res) => {
     res.json({
         message: "EventViewz Server is running!",

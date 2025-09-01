@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // src/models/User.ts
 const mongoose_1 = __importStar(require("mongoose"));
 const enums_1 = require("../types/enums");
+const cascadeDelete_1 = require("../utils/cascadeDelete");
 const userSchema = new mongoose_1.Schema({
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, index: true },
@@ -56,13 +57,37 @@ userSchema.pre("save", function (next) {
     }
     next();
 });
-// Temporarily disabled cascade delete to fix the schema error
-// userSchema.pre("findOneAndDelete", async function (this: any, next: Function) {
-//   const userId = this.getQuery()["_id"];
-//   await mongoose.model("Register").deleteMany({ user: userId });
-//   await mongoose.model("Cetificate").deleteMany({ user: userId });
-//   await mongoose.model("Event").deleteMany({ createdBy: userId });
-//   next();
-// });
+// Safe cascade delete middleware
+userSchema.pre("findOneAndDelete", async function (next) {
+    try {
+        const userId = this.getQuery()["_id"];
+        if (userId) {
+            console.log(`User deletion triggered, starting safe cascade delete for: ${userId}`);
+            await (0, cascadeDelete_1.cascadeDeleteUser)(userId.toString());
+        }
+        next();
+    }
+    catch (error) {
+        console.error("Error in user cascade delete middleware:", error);
+        // Continue with deletion even if cascade fails
+        next();
+    }
+});
+// Also handle direct delete operations
+userSchema.pre("deleteOne", async function (next) {
+    try {
+        const userId = this.getQuery()["_id"];
+        if (userId) {
+            console.log(`User deletion triggered, starting safe cascade delete for: ${userId}`);
+            await (0, cascadeDelete_1.cascadeDeleteUser)(userId.toString());
+        }
+        next();
+    }
+    catch (error) {
+        console.error("Error in user cascade delete middleware:", error);
+        // Continue with deletion even if cascade fails
+        next();
+    }
+});
 exports.default = mongoose_1.default.model("User", userSchema);
 //# sourceMappingURL=User.js.map

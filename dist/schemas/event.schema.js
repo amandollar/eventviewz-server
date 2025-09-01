@@ -38,7 +38,7 @@ exports.createEventSchema = zod_1.z.object({
         participants: zod_1.z.array(zod_1.z.string()).optional(),
         maxParticipants: zod_1.z.coerce.number().min(1).max(10000).optional(),
         isActive: zod_1.z.coerce.boolean().optional().default(true),
-        tickets: zod_1.z.array(exports.ticketSchema).optional(),
+        tickets: zod_1.z.array(exports.ticketSchema),
     }),
     file: exports.fileSchema // Image is now mandatory (removed .optional())
 }).refine((data) => {

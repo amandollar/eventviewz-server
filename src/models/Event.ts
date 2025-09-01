@@ -2,6 +2,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { EventCategory } from "../types/enums";
 import { IUser } from "./User";
+import { cascadeDeleteEvent } from "../utils/cascadeDelete";
 
 export interface ITicket {
   type: string;      // e.g. "VIP", "General", "Student"
@@ -57,19 +58,43 @@ const eventSchema = new Schema<IEvent>(
 
     isActive: { type: Boolean, default: true },
 
-    // Ticket categories (VIP, Regular, etc.)
-    tickets: { type: [ticketSchema], default: [] },
+    // Ticket categories (VIP, Regular, etc
+    tickets: { type: [ticketSchema], default: [] ,required: true},
   },
   { timestamps: true }
 );
 
-// Cascade delete related models when event is deleted
-// eventSchema.pre("findOneAndDelete", async function (next) {
-//   const eventId = this.getQuery()["_id"];
-//   await mongoose.model("Registration").deleteMany({ event: eventId });
-//   await mongoose.model("Certificate").deleteMany({ event: eventId });
-//   next();
-// });
+// Safe cascade delete middleware
+eventSchema.pre("findOneAndDelete", async function(this: any, next: Function) {
+  try {
+    const eventId = this.getQuery()["_id"];
+    if (eventId) {
+      console.log(`Event deletion triggered, starting safe cascade delete for: ${eventId}`);
+      await cascadeDeleteEvent(eventId.toString());
+    }
+    next();
+  } catch (error) {
+    console.error("Error in event cascade delete middleware:", error);
+    // Continue with deletion even if cascade fails
+    next();
+  }
+});
+
+// Also handle direct delete operations
+eventSchema.pre("deleteOne", async function(this: any, next: Function) {
+  try {
+    const eventId = this.getQuery()["_id"];
+    if (eventId) {
+      console.log(`Event deletion triggered, starting safe cascade delete for: ${eventId}`);
+      await cascadeDeleteEvent(eventId.toString());
+    }
+    next();
+  } catch (error) {
+    console.error("Error in event cascade delete middleware:", error);
+    // Continue with deletion even if cascade fails
+    next();
+  }
+});
 
 // Text index for search
 eventSchema.index({ title: "text", description: "text" });

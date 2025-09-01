@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // src/models/Announcement.ts
 const mongoose_1 = __importStar(require("mongoose"));
 const enums_1 = require("../types/enums");
+const cascadeDelete_1 = require("../utils/cascadeDelete");
 const announcementSchema = new mongoose_1.Schema({
     title: { type: String, required: true, trim: true },
     content: { type: String, required: true },
@@ -45,5 +46,37 @@ const announcementSchema = new mongoose_1.Schema({
     isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 announcementSchema.index({ type: 1, date: -1 }); // quick filtering
+// Safe cascade delete middleware
+announcementSchema.pre("findOneAndDelete", async function (next) {
+    try {
+        const announcementId = this.getQuery()["_id"];
+        if (announcementId) {
+            console.log(`Announcement deletion triggered, starting safe cascade delete for: ${announcementId}`);
+            await (0, cascadeDelete_1.cascadeDeleteAnnouncement)(announcementId.toString());
+        }
+        next();
+    }
+    catch (error) {
+        console.error("Error in announcement cascade delete middleware:", error);
+        // Continue with deletion even if cascade fails
+        next();
+    }
+});
+// Also handle direct delete operations
+announcementSchema.pre("deleteOne", async function (next) {
+    try {
+        const announcementId = this.getQuery()["_id"];
+        if (announcementId) {
+            console.log(`Announcement deletion triggered, starting safe cascade delete for: ${announcementId}`);
+            await (0, cascadeDelete_1.cascadeDeleteAnnouncement)(announcementId.toString());
+        }
+        next();
+    }
+    catch (error) {
+        console.error("Error in announcement cascade delete middleware:", error);
+        // Continue with deletion even if cascade fails
+        next();
+    }
+});
 exports.default = mongoose_1.default.model("Announcement", announcementSchema);
 //# sourceMappingURL=Announcement.js.map

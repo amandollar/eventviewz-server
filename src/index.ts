@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import { Request, Response } from "express";
 import connectDB from "./libs/db";
 import indexRouter from "./routes/index.routes";
-import { generalLimiter } from "./middlewares/rateLimit.middleware";
+
 import helmet from "helmet";
 
 
@@ -33,7 +33,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(generalLimiter);
 
 
 

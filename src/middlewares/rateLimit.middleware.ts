@@ -1,28 +1,6 @@
 import rateLimit from 'express-rate-limit';
 
-// General API rate limiter - applies to all routes
-export const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: {
-    error: 'Too many requests from this IP, please try again after 15 minutes.',
-    retryAfter: '15 minutes'
-  },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  // Store client IP address
-
-  // Custom handler for when limit is exceeded
-  handler: (req, res) => {
-    res.status(429).json({
-      error: 'Too many requests from this IP, please try again after 15 minutes.',
-      retryAfter: '15 minutes',
-      limit: req.rateLimit?.limit,
-      remaining: req.rateLimit?.remaining,
-      resetTime: req.rateLimit?.resetTime
-    });
-  }
-});
+// General API rate limiter removed - no longer needed
 
 // Stricter rate limiter for authentication endpoints
 export const authLimiter = rateLimit({

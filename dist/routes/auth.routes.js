@@ -19,10 +19,10 @@ authRouter.get("/google", rateLimit_middleware_1.authLimiter, auth_controller_1.
 authRouter.get("/google/callback", rateLimit_middleware_1.authLimiter, auth_controller_1.googleCallback);
 // Token Management
 authRouter.post("/refresh", rateLimit_middleware_1.authLimiter, auth_controller_1.refreshToken);
-authRouter.post("/logout", rateLimit_middleware_1.generalLimiter, auth_controller_1.logout);
+authRouter.post("/logout", auth_controller_1.logout);
 // User Management (protected routes)
-authRouter.get("/user", rateLimit_middleware_1.generalLimiter, auth_middleware_1.authMiddleware, auth_controller_1.getCurrentUser);
-authRouter.put("/user", rateLimit_middleware_1.generalLimiter, auth_middleware_1.authMiddleware, multer_middleware_1.default.single('image'), (0, validate_middleware_1.validateSchema)(auth_schemas_1.updateUserSchema), auth_controller_1.updateUser);
-authRouter.delete("/user", rateLimit_middleware_1.generalLimiter, auth_middleware_1.authMiddleware, auth_controller_1.deleteUser);
+authRouter.get("/user", auth_middleware_1.authMiddleware, auth_controller_1.getCurrentUser);
+authRouter.put("/user", auth_middleware_1.authMiddleware, multer_middleware_1.default.single('image'), (0, validate_middleware_1.validateSchema)(auth_schemas_1.updateUserSchema), auth_controller_1.updateUser);
+authRouter.delete("/user", auth_middleware_1.authMiddleware, auth_controller_1.deleteUser);
 exports.default = authRouter;
 //# sourceMappingURL=auth.routes.js.map

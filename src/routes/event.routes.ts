@@ -5,7 +5,7 @@ import { authorizeRoles } from "../middlewares/role.middleware";
 import { validateSchema } from "../middlewares/validate.middleware";
 import { createEventSchema,updateEventWithIdSchema } from "../schemas/event.schema";
 import upload from "../middlewares/multer.middleware";
-import { generalLimiter, eventCreationLimiter, uploadLimiter } from "../middlewares/rateLimit.middleware";
+import { eventCreationLimiter, uploadLimiter } from "../middlewares/rateLimit.middleware";
 
 const eventRouter = Router();
 
@@ -20,11 +20,11 @@ eventRouter.post("/",
   createEvent
 );
 
-// Public read endpoints - moderate rate limiting
-eventRouter.get("/", generalLimiter, getEvents);
-eventRouter.get("/search", generalLimiter, searchEvents);
-eventRouter.get("/category/:category", generalLimiter, getEventsByCategory);
-eventRouter.get("/:id", generalLimiter, getEventById);
+// Public read endpoints
+eventRouter.get("/", getEvents);
+eventRouter.get("/search", searchEvents);
+eventRouter.get("/category/:category", getEventsByCategory);
+eventRouter.get("/:id", getEventById);
 
 // Event modification - apply strict rate limiting and upload limiting
 eventRouter.put("/:id", 

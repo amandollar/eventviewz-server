@@ -16,14 +16,14 @@ const registrationRouter = express_1.default.Router();
 registrationRouter.use(auth_middleware_1.authMiddleware);
 // User routes - apply rate limiting
 registrationRouter.post("/register", rateLimit_middleware_1.registrationLimiter, (0, validate_middleware_1.validateSchema)(registration_schema_1.registerForEventSchema), registration_controller_1.registerForEvent); // Strict rate limiting for registrations
-registrationRouter.get("/user", rateLimit_middleware_1.generalLimiter, registration_controller_1.getUserRegistrations); // Moderate rate limiting for user data
-registrationRouter.put("/update", rateLimit_middleware_1.generalLimiter, (0, validate_middleware_1.validateSchema)(registration_schema_1.updateRegistrationSchema), registration_controller_1.updateRegistration); // Update registration details
-registrationRouter.get("/ticket/:registrationId", rateLimit_middleware_1.generalLimiter, registration_controller_1.getHallTicket); // Moderate rate limiting for tickets
+registrationRouter.get("/user", registration_controller_1.getUserRegistrations); // User data
+registrationRouter.put("/update", (0, validate_middleware_1.validateSchema)(registration_schema_1.updateRegistrationSchema), registration_controller_1.updateRegistration); // Update registration details
+registrationRouter.get("/ticket/:registrationId", registration_controller_1.getHallTicket); // Get tickets
 registrationRouter.delete("/cancel/:registrationId", rateLimit_middleware_1.registrationLimiter, registration_controller_1.cancelRegistration); // Strict rate limiting for cancellations
 // Admin/Organizer routes - apply rate limiting
-registrationRouter.get("/event/:eventId", rateLimit_middleware_1.generalLimiter, (0, role_middleware_1.authorizeRoles)("admin", "organizer"), registration_controller_1.getEventRegistrations);
-registrationRouter.put("/:registrationId/status", rateLimit_middleware_1.generalLimiter, (0, role_middleware_1.authorizeRoles)("admin", "organizer"), registration_controller_1.updateRegistrationStatus);
-registrationRouter.get("/ticket/user/:userId/event/:eventId", rateLimit_middleware_1.generalLimiter, (0, role_middleware_1.authorizeRoles)("admin", "organizer"), registration_controller_1.getHallTicketForUser);
-registrationRouter.get("/tickets/event/:eventId", rateLimit_middleware_1.generalLimiter, (0, role_middleware_1.authorizeRoles)("admin", "organizer"), registration_controller_1.getAllEventHallTickets);
+registrationRouter.get("/event/:eventId", (0, role_middleware_1.authorizeRoles)("admin", "organizer"), registration_controller_1.getEventRegistrations);
+registrationRouter.put("/:registrationId/status", (0, role_middleware_1.authorizeRoles)("admin", "organizer"), registration_controller_1.updateRegistrationStatus);
+registrationRouter.get("/ticket/user/:userId/event/:eventId", (0, role_middleware_1.authorizeRoles)("admin", "organizer"), registration_controller_1.getHallTicketForUser);
+registrationRouter.get("/tickets/event/:eventId", (0, role_middleware_1.authorizeRoles)("admin", "organizer"), registration_controller_1.getAllEventHallTickets);
 exports.default = registrationRouter;
 //# sourceMappingURL=registration.routes.js.map

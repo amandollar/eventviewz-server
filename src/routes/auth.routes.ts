@@ -12,7 +12,7 @@ import {
   login
 } from "../controllers/auth.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
-import { authLimiter, generalLimiter } from "../middlewares/rateLimit.middleware";
+import { authLimiter } from "../middlewares/rateLimit.middleware";
 import { validateSchema } from "../middlewares/validate.middleware";
 import {
   registerSchema,
@@ -33,12 +33,12 @@ authRouter.get("/google/callback", authLimiter, googleCallback);
 
 // Token Management
 authRouter.post("/refresh", authLimiter, refreshToken);
-authRouter.post("/logout", generalLimiter, logout);
+authRouter.post("/logout", logout);
 
 // User Management (protected routes)
-authRouter.get("/user", generalLimiter, authMiddleware, getCurrentUser);
-authRouter.put("/user", generalLimiter, authMiddleware, upload.single('image'), validateSchema(updateUserSchema), updateUser);
-authRouter.delete("/user", generalLimiter, authMiddleware, deleteUser);
+authRouter.get("/user", authMiddleware, getCurrentUser);
+authRouter.put("/user", authMiddleware, upload.single('image'), validateSchema(updateUserSchema), updateUser);
+authRouter.delete("/user", authMiddleware, deleteUser);
 
 export default authRouter;
   

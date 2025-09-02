@@ -7,7 +7,7 @@ exports.validateEmail = exports.validatePasswordStrength = exports.generatePassw
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = __importDefault(require("crypto"));
-// Password hashing
+// Hash Password
 const hashPassword = async (password) => {
     const saltRounds = 12;
     return await bcryptjs_1.default.hash(password, saltRounds);

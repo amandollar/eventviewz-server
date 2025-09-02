@@ -2,7 +2,7 @@
 import express from "express";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/role.middleware";
-import { generalLimiter } from "../middlewares/rateLimit.middleware";
+
 import {
   markAttendance,
   markBulkAttendance,
@@ -15,8 +15,7 @@ import {
 
 const certificateRouter = express.Router();
 
-// Apply rate limiting to all certificate routes
-certificateRouter.use(generalLimiter);
+// Certificate routes
 
 // All routes require authentication and manager role (admin/organizer)
 certificateRouter.use(authMiddleware);

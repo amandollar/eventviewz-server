@@ -3,30 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.paymentLimiter = exports.registrationLimiter = exports.eventCreationLimiter = exports.uploadLimiter = exports.authLimiter = exports.generalLimiter = void 0;
+exports.paymentLimiter = exports.registrationLimiter = exports.eventCreationLimiter = exports.uploadLimiter = exports.authLimiter = void 0;
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
-// General API rate limiter - applies to all routes
-exports.generalLimiter = (0, express_rate_limit_1.default)({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    message: {
-        error: 'Too many requests from this IP, please try again after 15 minutes.',
-        retryAfter: '15 minutes'
-    },
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-    // Store client IP address
-    // Custom handler for when limit is exceeded
-    handler: (req, res) => {
-        res.status(429).json({
-            error: 'Too many requests from this IP, please try again after 15 minutes.',
-            retryAfter: '15 minutes',
-            limit: req.rateLimit?.limit,
-            remaining: req.rateLimit?.remaining,
-            resetTime: req.rateLimit?.resetTime
-        });
-    }
-});
+// General API rate limiter removed - no longer needed
 // Stricter rate limiter for authentication endpoints
 exports.authLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutes

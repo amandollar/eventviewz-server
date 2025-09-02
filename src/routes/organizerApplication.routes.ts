@@ -12,7 +12,7 @@ import {
   rejectApplication,
   getApplicationStats
 } from "../controllers/organizerApplication.controller";
-import { generalLimiter } from "../middlewares/rateLimit.middleware";
+
 import upload from "../middlewares/multer.middleware";
 import {
   submitApplicationSchema,
@@ -29,16 +29,14 @@ organizerApplicationRouter.use(authMiddleware);
 
 // User routes (for students to apply)
 organizerApplicationRouter.post("/",
-  generalLimiter,
   upload.single("organizationImage"),
   validateSchema(submitApplicationSchema),
   submitApplication
 );
 
-organizerApplicationRouter.get("/my-application", generalLimiter, getMyApplication);
+organizerApplicationRouter.get("/my-application", getMyApplication);
 
 organizerApplicationRouter.put("/",
-  generalLimiter,
   upload.single("organizationImage"),
   validateSchema(updateApplicationSchema),
   updateApplication
@@ -46,25 +44,22 @@ organizerApplicationRouter.put("/",
 
 // Admin routes (for reviewing applications)
 organizerApplicationRouter.get("/",
-  generalLimiter,
   authorizeRoles("admin"),
   validateSchema(getAllApplicationsWithQuerySchema),
   getAllApplications
 );
 
-organizerApplicationRouter.get("/stats", generalLimiter, authorizeRoles("admin"), getApplicationStats);
+organizerApplicationRouter.get("/stats", authorizeRoles("admin"), getApplicationStats);
 
-organizerApplicationRouter.get("/:id", generalLimiter, authorizeRoles("admin"), getApplicationById);
+organizerApplicationRouter.get("/:id", authorizeRoles("admin"), getApplicationById);
 
 organizerApplicationRouter.post("/:id/approve",
-  generalLimiter,
   authorizeRoles("admin"),
   validateSchema(approveApplicationWithIdSchema),
   approveApplication
 );
 
 organizerApplicationRouter.post("/:id/reject",
-  generalLimiter,
   authorizeRoles("admin"),
   validateSchema(rejectApplicationWithIdSchema),
   rejectApplication

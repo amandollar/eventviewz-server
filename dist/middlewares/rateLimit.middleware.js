@@ -9,7 +9,7 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 // Stricter rate limiter for authentication endpoints
 exports.authLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // limit each IP to 5 requests per windowMs (more strict for auth)
+    max: 10, // limit each IP to 10 requests per windowMs (more strict for auth)
     message: {
         error: 'Too many authentication attempts from this IP, please try again after 15 minutes.',
         retryAfter: '15 minutes'

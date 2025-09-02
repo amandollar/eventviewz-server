@@ -62,7 +62,9 @@ const register = async (req, res) => {
                 email: user.email,
                 image: user.image || null,
                 role: user.role,
-                isEmailVerified: user.isEmailVerified
+                isEmailVerified: user.isEmailVerified,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
             },
             accessToken
         });
@@ -117,7 +119,9 @@ const login = async (req, res) => {
                 image: user.image || null,
                 role: user.role,
                 isEmailVerified: user.isEmailVerified,
-                lastLogin: user.lastLogin
+                lastLogin: user.lastLogin,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
             },
             accessToken
         });
@@ -237,7 +241,9 @@ const getCurrentUser = async (req, res) => {
             image: user.image || null,
             role: user.role,
             isEmailVerified: user.isEmailVerified,
-            lastLogin: user.lastLogin
+            lastLogin: user.lastLogin,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt
         });
     }
     catch (error) {
@@ -315,6 +321,8 @@ const deleteUser = async (req, res) => {
             res.status(404).json({ error: "User not found" });
             return;
         }
+        // Clear refresh token cookie since user is deleted
+        res.clearCookie("refreshToken");
         res.json({ message: "User deleted successfully" });
     }
     catch (error) {

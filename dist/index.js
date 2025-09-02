@@ -13,7 +13,7 @@ const index_routes_1 = __importDefault(require("./routes/index.routes"));
 const helmet_1 = __importDefault(require("helmet"));
 //Express App
 const app = (0, express_1.default)();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 //Security Headers
 app.set("trust proxy", 1);
 app.use((0, helmet_1.default)());
@@ -21,7 +21,7 @@ app.use((0, helmet_1.default)());
 app.set('trust proxy', 1);
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
-    origin: process.env.ALLOWED_ORIGINS?.split(','),
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],

@@ -81,7 +81,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         email: user.email,
         image: user.image || null,
         role: user.role,
-        isEmailVerified: user.isEmailVerified
+        isEmailVerified: user.isEmailVerified,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       },
       accessToken
     });
@@ -145,7 +147,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         image: user.image || null,
         role: user.role,
         isEmailVerified: user.isEmailVerified,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       },
       accessToken
     });
@@ -291,7 +295,9 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
             image: user.image || null,
             role: user.role,
             isEmailVerified: user.isEmailVerified,
-            lastLogin: user.lastLogin
+            lastLogin: user.lastLogin,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt
         });
     } catch (error) {
         console.error('Error fetching user:', error);
@@ -388,6 +394,9 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    // Clear refresh token cookie since user is deleted
+    res.clearCookie("refreshToken");
+    
     res.json({ message: "User deleted successfully" });
   } catch (error) {
     console.error("Delete user error:", error);

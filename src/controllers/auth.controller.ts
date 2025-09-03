@@ -80,7 +80,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     await user.save();
 
     // Set refresh token cookie
-    res.cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict" });
+    const cookieOptions = {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'strict' as const,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    };
+    res.cookie("refreshToken", refreshToken, cookieOptions);
 
     res.status(201).json({
       success: true,
@@ -145,7 +151,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     await user.save();
 
     // Set refresh token cookie
-    res.cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict" });
+    const cookieOptions = {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'strict' as const,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    };
+    res.cookie("refreshToken", refreshToken, cookieOptions);
 
     res.json({
       success: true,

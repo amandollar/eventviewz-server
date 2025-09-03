@@ -65,7 +65,13 @@ connectDB();
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`CORS Origins: ${JSON.stringify(['http://localhost:3000', 'http://127.0.0.1:3000','https://eventviewz.com'])}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'Not set'}`);
+  console.log(`Google Client ID: ${process.env.GOOGLE_CLIENT_ID ? 'SET' : 'MISSING'}`);
+  console.log(`Google Client Secret: ${process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'MISSING'}`);
+  console.log(`MongoDB URI: ${process.env.MONGODB_URI ? 'SET' : 'MISSING'}`);
 });
 
 

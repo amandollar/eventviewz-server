@@ -15,10 +15,18 @@ export const registerForEventSchema = z.object({
     dietaryPreferences: z.enum(["Vegetarian", "Non-Vegetarian", "Vegan", "No Preference"]).optional(),
     specialRequirements: z.string().max(200, "Special requirements too long").optional(),
     emergencyContact: z.object({
-        name: z.string().min(1, "Emergency contact name is required"),
-        phone: z.string().min(10, "Emergency contact phone is required"),
-        relationship: z.string().min(1, "Relationship is required")
-    }).optional(),
+        name: z.string().optional(),
+        phone: z.string().optional(),
+        relationship: z.string().optional()
+    }).optional().refine((data) => {
+        // If emergency contact is provided, all fields must be filled
+        if (data && (data.name || data.phone || data.relationship)) {
+            return data.name && data.phone && data.relationship;
+        }
+        return true;
+    }, {
+        message: "If emergency contact is provided, all fields (name, phone, relationship) are required"
+    }),
     tshirtSize: z.enum(["XS", "S", "M", "L", "XL", "XXL", "No T-shirt"]).optional(),
     // Additional notes
     notes: z.string().max(300, "Notes too long").optional()

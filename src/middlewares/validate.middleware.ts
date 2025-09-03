@@ -30,6 +30,14 @@ export const validateSchema = <T extends ZodObject<any>>(schema: T) => {
           message: err.message
         }))
         
+        // Debug logging for validation errors
+        console.log('Validation Error:', {
+          url: req.url,
+          method: req.method,
+          body: req.body,
+          errors: errorMessages
+        });
+        
         return res.status(400).json({
           message: 'Validation failed',
           errors: errorMessages

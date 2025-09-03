@@ -92,6 +92,37 @@ export const updateEvent = async (req: Request, res: Response) => {
         const { id } = req.params;
         const { title, description, date, startTime, endTime, venue, location, category, maxParticipants, isActive, tickets } = req.body;
         const image = req.file?.path;
+        
+        // Get user info from auth middleware
+        const userId = (req as any).user?.id;
+        const userRole = (req as any).user?.role;
+
+        if (!userId) {
+            res.status(401).json({
+                success: false,
+                message: "User not authenticated",
+            });
+            return;
+        }
+
+        // First, find the event to check ownership
+        const existingEvent = await Event.findById(id);
+        if (!existingEvent) {
+            res.status(404).json({
+                success: false,
+                message: "Event not found",
+            });
+            return;
+        }
+
+        // Check authorization: Only event owner or admin can update
+        if (userRole !== "admin" && (existingEvent.createdBy as any).toString() !== userId) {
+            res.status(403).json({
+                success: false,
+                message: "You can only update events you created",
+            });
+            return;
+        }
 
         const event = await Event.findByIdAndUpdate(id, {
             title,
@@ -106,7 +137,7 @@ export const updateEvent = async (req: Request, res: Response) => {
             isActive,
             tickets,
             image,
-        });
+        }, { new: true });
 
         res.status(200).json({
             success: true,
@@ -125,6 +156,38 @@ export const updateEvent = async (req: Request, res: Response) => {
 export const deleteEvent = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        
+        // Get user info from auth middleware
+        const userId = (req as any).user?.id;
+        const userRole = (req as any).user?.role;
+
+        if (!userId) {
+            res.status(401).json({
+                success: false,
+                message: "User not authenticated",
+            });
+            return;
+        }
+
+        // First, find the event to check ownership
+        const existingEvent = await Event.findById(id);
+        if (!existingEvent) {
+            res.status(404).json({
+                success: false,
+                message: "Event not found",
+            });
+            return;
+        }
+
+        // Check authorization: Only event owner or admin can delete
+        if (userRole !== "admin" && (existingEvent.createdBy as any).toString() !== userId) {
+            res.status(403).json({
+                success: false,
+                message: "You can only delete events you created",
+            });
+            return;
+        }
+
         await Event.findByIdAndDelete(id);
         res.status(200).json({
             success: true,
@@ -134,6 +197,43 @@ export const deleteEvent = async (req: Request, res: Response) => {
         res.status(500).json({
             success: false,
             message: "Failed to delete event",
+            error: (error as any).message,
+        });
+    }
+};
+
+// Get events created by the current user (for organizer dashboard)
+export const getMyEvents = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id;
+        const userRole = (req as any).user?.role;
+
+        if (!userId) {
+            res.status(401).json({
+                success: false,
+                message: "User not authenticated",
+            });
+            return;
+        }
+
+        let events;
+        if (userRole === "admin") {
+            // Admin can see all events
+            events = await Event.find().sort({ createdAt: -1 });
+        } else {
+            // Organizers can only see their own events
+            events = await Event.find({ createdBy: userId }).sort({ createdAt: -1 });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Events fetched successfully",
+            events,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch events",
             error: (error as any).message,
         });
     }

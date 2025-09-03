@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createEvent, getEvents, getEventById, updateEvent, deleteEvent, searchEvents, getEventsByCategory } from "../controllers/event.controller";
+import { createEvent, getEvents, getEventById, updateEvent, deleteEvent, searchEvents, getEventsByCategory, getMyEvents } from "../controllers/event.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/role.middleware";
 import { validateSchema } from "../middlewares/validate.middleware";
@@ -25,6 +25,9 @@ eventRouter.get("/", getEvents);
 eventRouter.get("/search", searchEvents);
 eventRouter.get("/category/:category", getEventsByCategory);
 eventRouter.get("/:id", getEventById);
+
+// Protected endpoints for organizers/admins
+eventRouter.get("/my/events", authMiddleware, authorizeRoles("admin", "organizer"), getMyEvents);
 
 // Event modification - apply strict rate limiting and upload limiting
 eventRouter.put("/:id", 

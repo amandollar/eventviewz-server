@@ -25,7 +25,7 @@ app.use(helmet());
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000','https://eventviewz.com'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
@@ -44,6 +44,21 @@ app.get("/", (_req: Request, res: Response) => {
   });
 });
 app.use("/api/v1", indexRouter);
+
+// Global error handler
+app.use((error: any, req: Request, res: Response, next: any) => {
+  console.error('Global error handler:', error);
+  console.error('Error stack:', error.stack);
+  console.error('Request URL:', req.url);
+  console.error('Request method:', req.method);
+  console.error('Request headers:', req.headers);
+  
+  res.status(500).json({
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+  });
+});
 
 // Connect to database
 connectDB();

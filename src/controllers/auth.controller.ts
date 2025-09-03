@@ -234,12 +234,44 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
                 isEmailVerified: true
             });
         } else {
+            console.log("Google OAuth: Updating existing user:", {
+                userId: user._id,
+                currentName: user.name,
+                newName: data.name,
+                hasName: !!user.name
+            });
+            
+            // Use findOneAndUpdate to avoid validation issues with save()
+            const updateData: any = {
+                lastLogin: new Date()
+            };
+            
             // Update profile picture if it changed
             if (data.picture && user.image !== data.picture) {
-                user.image = data.picture;
+                updateData.image = data.picture;
             }
-            user.lastLogin = new Date();
-            await user.save();
+            
+            // Ensure name is set (in case it was missing from previous OAuth)
+            if (!user.name && data.name) {
+                updateData.name = data.name;
+                console.log("Google OAuth: Setting missing name to:", data.name);
+            }
+            
+            try {
+                await User.findByIdAndUpdate(user._id, updateData, { runValidators: true });
+            } catch (validationError: any) {
+                console.error("Google OAuth: User update validation error:", validationError);
+                // If validation fails, try to fix the user document
+                if (validationError.name === 'ValidationError' && validationError.errors?.name) {
+                    console.log("Google OAuth: Attempting to fix user with missing name");
+                    await User.findByIdAndUpdate(user._id, { 
+                        name: data.name || data.email?.split('@')[0] || 'Google User',
+                        lastLogin: new Date()
+                    }, { runValidators: true });
+                } else {
+                    throw validationError;
+                }
+            }
         }
 
         const accessToken = jwt.sign(

@@ -10,7 +10,16 @@ const User_1 = __importDefault(require("../models/User"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const auth_utils_1 = require("../utils/auth.utils");
 dotenv_1.default.config();
-const oauth2Client = new googleapis_1.google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
+// Create OAuth2 client with proper redirect URI handling
+const getRedirectUri = () => {
+    // For production, use the full URL
+    if (process.env.NODE_ENV === 'production') {
+        return process.env.GOOGLE_REDIRECT_URI || 'https://eventviewz-server.onrender.com/api/v1/auth/google/callback';
+    }
+    // For development, use localhost
+    return process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/v1/auth/google/callback';
+};
+const oauth2Client = new googleapis_1.google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, getRedirectUri());
 // Normal Authentication Functions
 const register = async (req, res) => {
     try {
@@ -146,18 +155,40 @@ const googleCallback = async (req, res) => {
     try {
         const { code } = req.query;
         if (!code) {
+            console.error("Google OAuth: No authorization code provided");
             res.status(400).json({ error: "No code provided" });
+            return;
+        }
+        console.log("Google OAuth: Attempting to exchange code for tokens");
+        console.log("Google OAuth: Environment variables check:", {
+            CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? "SET" : "MISSING",
+            CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? "SET" : "MISSING",
+            REDIRECT_URI: getRedirectUri(),
+            NODE_ENV: process.env.NODE_ENV
+        });
+        // Check if environment variables are properly set
+        if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+            console.error("Google OAuth: Missing required environment variables (CLIENT_ID or CLIENT_SECRET)");
+            res.status(500).json({ error: "OAuth configuration error" });
             return;
         }
         const { tokens } = await oauth2Client.getToken(code);
         oauth2Client.setCredentials(tokens);
+        console.log("Google OAuth: Successfully obtained tokens, fetching user info");
         const oauth2 = googleapis_1.google.oauth2({ version: "v2", auth: oauth2Client });
         const { data } = await oauth2.userinfo.get();
+        console.log("Google OAuth: User info received:", {
+            email: data.email,
+            name: data.name,
+            id: data.id
+        });
         let user = await User_1.default.findOne({ email: data.email });
         if (!user) {
+            // Ensure we have a name - fallback to email if Google doesn't provide name
+            const userName = data.name || data.email?.split('@')[0] || 'Google User';
             user = await User_1.default.create({
                 email: data.email,
-                name: data.name,
+                name: userName,
                 image: data.picture, // Google provides profile picture URL
                 googleId: data.id,
                 isEmailVerified: true
@@ -179,7 +210,25 @@ const googleCallback = async (req, res) => {
         res.redirect(`${process.env.FRONTEND_URL}/auth/success?accessToken=${accessToken}`);
     }
     catch (error) {
-        console.error(error);
+        console.error("Google OAuth callback error:", error);
+        // Handle specific OAuth errors
+        if (error.code === 400 && error.message?.includes('invalid_grant')) {
+            console.error("Google OAuth: Invalid grant - check redirect URI and environment variables");
+            res.status(400).json({
+                error: "OAuth authentication failed",
+                details: "Please try logging in again"
+            });
+            return;
+        }
+        // Handle other specific errors
+        if (error.response?.data?.error) {
+            console.error("Google API error:", error.response.data);
+            res.status(400).json({
+                error: "Google authentication failed",
+                details: error.response.data.error_description || error.response.data.error
+            });
+            return;
+        }
         res.status(500).json({ error: "Internal server error" });
     }
 };

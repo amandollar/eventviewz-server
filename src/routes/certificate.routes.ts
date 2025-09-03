@@ -7,6 +7,7 @@ import {
   markAttendance,
   markBulkAttendance,
   generateCertificate,
+  generateStudentCertificate,
   getCertificateData,
   getEventAttendanceStats,
   getEventRegistrations,
@@ -17,7 +18,10 @@ const certificateRouter = express.Router();
 
 // Certificate routes
 
-// All routes require authentication and manager role (admin/organizer)
+// Student certificate download (requires authentication only)
+certificateRouter.post("/student/generate/:registrationId", authMiddleware, generateStudentCertificate);
+
+// All other routes require authentication and manager role (admin/organizer)
 certificateRouter.use(authMiddleware);
 certificateRouter.use(authorizeRoles("admin", "organizer"));
 
@@ -26,7 +30,7 @@ certificateRouter.post("/attendance/:registrationId", markAttendance);
 certificateRouter.post("/attendance/bulk", markBulkAttendance);
 
 // Certificate generation and data
-certificateRouter.get("/generate/:registrationId", generateCertificate);
+certificateRouter.post("/generate/:registrationId", generateCertificate);
 certificateRouter.get("/data/:registrationId", getCertificateData);
 
 // Event management and statistics

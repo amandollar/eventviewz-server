@@ -388,6 +388,72 @@ export const getEventAttendanceStats = async (req: Request, res: Response): Prom
   }
 };
 
+// Generate certificate for student's own registration
+export const generateStudentCertificate = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { registrationId } = req.params;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: "User not authenticated" });
+      return;
+    }
+
+    // Check if registration exists and belongs to the authenticated user
+    const registration = await Registration.findById(registrationId)
+      .populate('user', 'name email')
+      .populate('event', 'title date venue location');
+
+    if (!registration) {
+      res.status(404).json({ error: "Registration not found" });
+      return;
+    }
+
+    // Check if the registration belongs to the authenticated user
+    const registrationUserId = typeof registration.user === 'string' 
+      ? registration.user 
+      : (registration.user as any)?._id?.toString();
+    
+    console.log('Certificate generation debug:', {
+      userId,
+      registrationUserId,
+      registrationUser: registration.user,
+      userType: typeof registration.user,
+      isMatch: registrationUserId === userId
+    });
+    
+    if (registrationUserId !== userId) {
+      console.log('User validation failed:', { userId, registrationUserId });
+      res.status(403).json({ error: "You can only download certificates for your own registrations" });
+      return;
+    }
+
+    // Check if attendance is marked
+    if (!registration.isAttended) {
+      res.status(400).json({ error: "Cannot generate certificate for non-attended event" });
+      return;
+    }
+
+    // Use default certificate options for students
+    const options: ICertificateOptions = {
+      template: 'classic',
+      greeting: 'Congratulations on successfully completing',
+      includeQRCode: true,
+      theme: 'corporate',
+      includeLogo: true,
+      includeSignature: true,
+      fontSize: 'medium'
+    };
+
+    // Use streaming for better performance
+    await generateStreamingCertificate(registrationId!, options, res);
+
+  } catch (error) {
+    console.error("Generate student certificate error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 // Get all registrations for an event with attendance status
 export const getEventRegistrations = async (req: Request, res: Response): Promise<void> => {
   try {

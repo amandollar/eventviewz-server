@@ -6,7 +6,6 @@ import cookieParser from "cookie-parser";
 import { Request, Response } from "express";
 import connectDB from "./libs/db";
 import indexRouter from "./routes/index.routes";
-
 import helmet from "helmet";
 
 

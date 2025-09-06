@@ -104,7 +104,6 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       razorpayKeyId: process.env.RAZORPAY_KEY_ID || "rzp_test_1234567890"
     });
   } catch (err) {
-    console.error("createPaymentOrder error:", err);
     return res.status(500).json({ success: false, error: "Failed to create payment order" });
   }
 };
@@ -127,7 +126,6 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
     const eventType = req.body.event;
 
     if (eventType === "payment.captured") {
-      console.log("payment.captured");
       const payment = req.body.payload.payment.entity;
       const registration = await Registration.findOne({ paymentOrderId: payment.order_id });
       if (registration && registration.status !== "confirmed") {
@@ -152,7 +150,6 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("razorpayWebhook error:", err);
     return res.status(500).json({ success: false });
   }
 };
@@ -191,7 +188,6 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
       },
     });
   } catch (err) {
-    console.error("getPaymentStatus error:", err);
     return res.status(500).json({ success: false, error: "Failed to get payment status" });
   }
 };
@@ -223,7 +219,6 @@ export const cancelPaymentOrder = async (req: Request, res: Response) => {
       registration: { id: registration._id, status: registration.status, cancelledAt: registration.cancelledAt },
     });
   } catch (err) {
-    console.error("cancelPaymentOrder error:", err);
     return res.status(500).json({ success: false, error: "Failed to cancel payment order" });
   }
 };
@@ -268,7 +263,6 @@ export const getPaymentHistory = async (req: Request, res: Response) => {
       },
     });
   } catch (err) {
-    console.error("getPaymentHistory error:", err);
     return res.status(500).json({ success: false, error: "Failed to get payment history" });
   }
 };

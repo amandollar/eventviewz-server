@@ -81,12 +81,11 @@ organizerApplicationSchema.pre("findOneAndDelete", async function(this: any, nex
   try {
     const applicationId = this.getQuery()["_id"];
     if (applicationId) {
-      console.log(`Organizer application deletion triggered, starting safe cascade delete for: ${applicationId}`);
       await cascadeDeleteOrganizerApplication(applicationId.toString());
     }
     next();
   } catch (error) {
-    console.error("Error in organizer application cascade delete middleware:", error);
+
     // Continue with deletion even if cascade fails
     next();
   }
@@ -97,12 +96,10 @@ organizerApplicationSchema.pre("deleteOne", async function(this: any, next: Func
   try {
     const applicationId = this.getQuery()["_id"];
     if (applicationId) {
-      console.log(`Organizer application deletion triggered, starting safe cascade delete for: ${applicationId}`);
       await cascadeDeleteOrganizerApplication(applicationId.toString());
     }
     next();
   } catch (error) {
-    console.error("Error in organizer application cascade delete middleware:", error);
     // Continue with deletion even if cascade fails
     next();
   }

@@ -61,17 +61,6 @@ export const registerForEvent = async (req: Request, res: Response) => {
         const ticket = (event as any).tickets?.find((t: any) => t.type === ticketType);
         const isPaidEvent = ticket && Number(ticket.price) > 0;
         
-        // Debug logging
-        console.log('Registration Debug:', {
-            eventId,
-            ticketType,
-            ticket,
-            ticketPrice: ticket?.price,
-            ticketPriceType: typeof ticket?.price,
-            isPaidEvent,
-            allTickets: (event as any).tickets
-        });
-
         // For paid events, prevent direct registration and require payment flow
         if (isPaidEvent) {
             return res.status(400).json({

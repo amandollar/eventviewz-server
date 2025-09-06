@@ -69,12 +69,11 @@ eventSchema.pre("findOneAndDelete", async function(this: any, next: Function) {
   try {
     const eventId = this.getQuery()["_id"];
     if (eventId) {
-      console.log(`Event deletion triggered, starting safe cascade delete for: ${eventId}`);
       await cascadeDeleteEvent(eventId.toString());
     }
     next();
   } catch (error) {
-    console.error("Error in event cascade delete middleware:", error);
+
     // Continue with deletion even if cascade fails
     next();
   }
@@ -85,13 +84,10 @@ eventSchema.pre("deleteOne", async function(this: any, next: Function) {
   try {
     const eventId = this.getQuery()["_id"];
     if (eventId) {
-      console.log(`Event deletion triggered, starting safe cascade delete for: ${eventId}`);
       await cascadeDeleteEvent(eventId.toString());
     }
     next();
   } catch (error) {
-    console.error("Error in event cascade delete middleware:", error);
-    // Continue with deletion even if cascade fails
     next();
   }
 });

@@ -4,7 +4,6 @@ import Registration from "../models/Register";
 import Event from "../models/Event";
 import User from "../models/User";
 import { 
-  generateCertificatePDF, 
   generateCertificateData, 
   generateStreamingCertificate,
   validateCertificateOptions,
@@ -73,7 +72,6 @@ export const markAttendance = async (req: Request, res: Response): Promise<void>
     });
 
   } catch (error) {
-    console.error("Mark attendance error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -149,7 +147,6 @@ export const generateCertificate = async (req: Request, res: Response): Promise<
     await generateStreamingCertificate(registrationId!, options, res);
 
   } catch (error) {
-    console.error("Generate certificate error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -181,7 +178,6 @@ export const getCertificateData = async (req: Request, res: Response): Promise<v
     });
 
   } catch (error) {
-    console.error("Get certificate data error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -221,7 +217,6 @@ export const getCertificateThemes = async (req: Request, res: Response): Promise
     });
 
   } catch (error) {
-    console.error("Get certificate themes error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -308,7 +303,6 @@ export const markBulkAttendance = async (req: Request, res: Response): Promise<v
     });
 
   } catch (error) {
-    console.error("Bulk attendance error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -383,7 +377,6 @@ export const getEventAttendanceStats = async (req: Request, res: Response): Prom
     });
 
   } catch (error) {
-    console.error("Get attendance stats error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -414,16 +407,7 @@ export const generateStudentCertificate = async (req: Request, res: Response): P
       ? registration.user 
       : (registration.user as any)?._id?.toString();
     
-    console.log('Certificate generation debug:', {
-      userId,
-      registrationUserId,
-      registrationUser: registration.user,
-      userType: typeof registration.user,
-      isMatch: registrationUserId === userId
-    });
-    
     if (registrationUserId !== userId) {
-      console.log('User validation failed:', { userId, registrationUserId });
       res.status(403).json({ error: "You can only download certificates for your own registrations" });
       return;
     }
@@ -449,7 +433,6 @@ export const generateStudentCertificate = async (req: Request, res: Response): P
     await generateStreamingCertificate(registrationId!, options, res);
 
   } catch (error) {
-    console.error("Generate student certificate error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -508,7 +491,6 @@ export const getEventRegistrations = async (req: Request, res: Response): Promis
     });
 
   } catch (error) {
-    console.error("Get event registrations error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

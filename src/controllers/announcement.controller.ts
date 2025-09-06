@@ -10,7 +10,8 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 
         // Check if user is admin
         if (adminUser.role !== "admin") {
-            return res.status(403).json({
+            return res.status(403).
+            json({
                 success: false,
                 message: "Only admins can create announcements"
             });

@@ -48,12 +48,10 @@ sponsorSchema.pre("findOneAndDelete", async function(this: any, next: Function) 
   try {
     const sponsorId = this.getQuery()["_id"];
     if (sponsorId) {
-      console.log(`Sponsor deletion triggered, starting safe cascade delete for: ${sponsorId}`);
       await cascadeDeleteSponsor(sponsorId.toString());
     }
     next();
   } catch (error) {
-    console.error("Error in sponsor cascade delete middleware:", error);
     // Continue with deletion even if cascade fails
     next();
   }
@@ -64,12 +62,10 @@ sponsorSchema.pre("deleteOne", async function(this: any, next: Function) {
   try {
     const sponsorId = this.getQuery()["_id"];
     if (sponsorId) {
-      console.log(`Sponsor deletion triggered, starting safe cascade delete for: ${sponsorId}`);
       await cascadeDeleteSponsor(sponsorId.toString());
     }
     next();
   } catch (error) {
-    console.error("Error in sponsor cascade delete middleware:", error);
     // Continue with deletion even if cascade fails
     next();
   }

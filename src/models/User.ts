@@ -48,12 +48,11 @@ userSchema.pre("findOneAndDelete", async function(this: any, next: Function) {
   try {
     const userId = this.getQuery()["_id"];
     if (userId) {
-      console.log(`User deletion triggered, starting safe cascade delete for: ${userId}`);
       await cascadeDeleteUser(userId.toString());
     }
     next();
   } catch (error) {
-    console.error("Error in user cascade delete middleware:", error);
+
     // Continue with deletion even if cascade fails
     next();
   }
@@ -64,12 +63,10 @@ userSchema.pre("deleteOne", async function(this: any, next: Function) {
   try {
     const userId = this.getQuery()["_id"];
     if (userId) {
-      console.log(`User deletion triggered, starting safe cascade delete for: ${userId}`);
       await cascadeDeleteUser(userId.toString());
     }
     next();
   } catch (error) {
-    console.error("Error in user cascade delete middleware:", error);
     // Continue with deletion even if cascade fails
     next();
   }

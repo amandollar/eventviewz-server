@@ -63,32 +63,29 @@ export const documentExists = async (
  * Deletes all related documents when a user is deleted
  */
 export const cascadeDeleteUser = async (userId: string): Promise<void> => {
-  console.log(`Starting cascade delete for user: ${userId}`);
+
   
   // Check if user exists first
   const userExists = await documentExists("User", { _id: userId });
   if (!userExists) {
-    console.log(`User ${userId} not found, skipping cascade delete`);
     return;
   }
 
   // Delete registrations
   const registrationsDeleted = await safeDeleteMany("Registration", { user: userId });
-  console.log(`Deleted ${registrationsDeleted} registrations for user ${userId}`);
 
   // Delete organizer applications
   const applicationsDeleted = await safeDeleteMany("OrganizerApplication", { user: userId });
-  console.log(`Deleted ${applicationsDeleted} organizer applications for user ${userId}`);
+
 
   // Delete events created by user
   const eventsDeleted = await safeDeleteMany("Event", { createdBy: userId });
-  console.log(`Deleted ${eventsDeleted} events created by user ${userId}`);
+
 
   // Delete announcements created by user
   const announcementsDeleted = await safeDeleteMany("Announcement", { createdBy: userId });
-  console.log(`Deleted ${announcementsDeleted} announcements created by user ${userId}`);
 
-  console.log(`Completed cascade delete for user: ${userId}`);
+;
 };
 
 /**
@@ -96,24 +93,22 @@ export const cascadeDeleteUser = async (userId: string): Promise<void> => {
  * Deletes all related documents when an event is deleted
  */
 export const cascadeDeleteEvent = async (eventId: string): Promise<void> => {
-  console.log(`Starting cascade delete for event: ${eventId}`);
+
   
   // Check if event exists first
   const eventExists = await documentExists("Event", { _id: eventId });
   if (!eventExists) {
-    console.log(`Event ${eventId} not found, skipping cascade delete`);
     return;
   }
 
   // Delete registrations for this event
   const registrationsDeleted = await safeDeleteMany("Registration", { event: eventId });
-  console.log(`Deleted ${registrationsDeleted} registrations for event ${eventId}`);
 
-  // Note: If you have certificates or other event-related models, add them here
-  // const certificatesDeleted = await safeDeleteMany("Certificate", { event: eventId });
-  // console.log(`Deleted ${certificatesDeleted} certificates for event ${eventId}`);
 
-  console.log(`Completed cascade delete for event: ${eventId}`);
+  // Delete certificate for this event
+  const certificatesDeleted = await safeDeleteMany("Certificate", { event: eventId });
+
+
 };
 
 /**
@@ -121,12 +116,11 @@ export const cascadeDeleteEvent = async (eventId: string): Promise<void> => {
  * Handles any cleanup needed when a registration is deleted
  */
 export const cascadeDeleteRegistration = async (registrationId: string): Promise<void> => {
-  console.log(`Starting cascade delete for registration: ${registrationId}`);
+
   
   // Check if registration exists first
   const registrationExists = await documentExists("Registration", { _id: registrationId });
   if (!registrationExists) {
-    console.log(`Registration ${registrationId} not found, skipping cascade delete`);
     return;
   }
 
@@ -143,14 +137,12 @@ export const cascadeDeleteRegistration = async (registrationId: string): Promise
           registration.event,
           { $inc: { currentParticipants: -1 } }
         );
-        console.log(`Updated participant count for event: ${registration.event}`);
       }
     }
   } catch (error) {
     console.warn(`Warning: Failed to update event participant count:`, error);
   }
 
-  console.log(`Completed cascade delete for registration: ${registrationId}`);
 };
 
 /**
@@ -158,18 +150,15 @@ export const cascadeDeleteRegistration = async (registrationId: string): Promise
  * Handles any cleanup needed when an announcement is deleted
  */
 export const cascadeDeleteAnnouncement = async (announcementId: string): Promise<void> => {
-  console.log(`Starting cascade delete for announcement: ${announcementId}`);
   
   // Check if announcement exists first
   const announcementExists = await documentExists("Announcement", { _id: announcementId });
   if (!announcementExists) {
-    console.log(`Announcement ${announcementId} not found, skipping cascade delete`);
     return;
   }
 
   // Add any announcement-specific cleanup here
-  // For now, just log completion
-  console.log(`Completed cascade delete for announcement: ${announcementId}`);
+  
 };
 
 /**
@@ -177,18 +166,15 @@ export const cascadeDeleteAnnouncement = async (announcementId: string): Promise
  * Handles any cleanup needed when a sponsor is deleted
  */
 export const cascadeDeleteSponsor = async (sponsorId: string): Promise<void> => {
-  console.log(`Starting cascade delete for sponsor: ${sponsorId}`);
+
   
   // Check if sponsor exists first
   const sponsorExists = await documentExists("Sponsor", { _id: sponsorId });
   if (!sponsorExists) {
-    console.log(`Sponsor ${sponsorId} not found, skipping cascade delete`);
     return;
   }
 
   // Add any sponsor-specific cleanup here
-  // For now, just log completion
-  console.log(`Completed cascade delete for sponsor: ${sponsorId}`);
 };
 
 /**
@@ -196,18 +182,16 @@ export const cascadeDeleteSponsor = async (sponsorId: string): Promise<void> => 
  * Handles any cleanup needed when an application is deleted
  */
 export const cascadeDeleteOrganizerApplication = async (applicationId: string): Promise<void> => {
-  console.log(`Starting cascade delete for organizer application: ${applicationId}`);
+
   
   // Check if application exists first
   const applicationExists = await documentExists("OrganizerApplication", { _id: applicationId });
   if (!applicationExists) {
-    console.log(`Organizer application ${applicationId} not found, skipping cascade delete`);
     return;
   }
 
   // Add any application-specific cleanup here
   // For now, just log completion
-  console.log(`Completed cascade delete for organizer application: ${applicationId}`);
 };
 
 /**

@@ -105,7 +105,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
 
   } catch (error) {
-    console.error("Registration error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -177,7 +176,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
 
   } catch (error) {
-    console.error("Login error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -198,22 +196,12 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
         const { code } = req.query;
 
         if(!code) {
-            console.error("Google OAuth: No authorization code provided");
             res.status(400).json({ error: "No code provided" });
             return;
         }
-
-        console.log("Google OAuth: Attempting to exchange code for tokens");
-        console.log("Google OAuth: Environment variables check:", {
-            CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? "SET" : "MISSING",
-            CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? "SET" : "MISSING",
-            REDIRECT_URI: getRedirectUri(),
-            NODE_ENV: process.env.NODE_ENV
-        });
         
         // Check if environment variables are properly set
         if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-            console.error("Google OAuth: Missing required environment variables (CLIENT_ID or CLIENT_SECRET)");
             res.status(500).json({ error: "OAuth configuration error" });
             return;
         }
@@ -221,16 +209,10 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
         const { tokens } = await oauth2Client.getToken(code as string);
         oauth2Client.setCredentials(tokens);
 
-        console.log("Google OAuth: Successfully obtained tokens, fetching user info");
         
         const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
         const { data } = await oauth2.userinfo.get();
-        
-        console.log("Google OAuth: User info received:", { 
-            email: data.email, 
-            name: data.name, 
-            id: data.id 
-        });
+
 
         let user = await User.findOne({ email: data.email });
 
@@ -246,12 +228,6 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
                 isEmailVerified: true
             });
         } else {
-            console.log("Google OAuth: Updating existing user:", {
-                userId: user._id,
-                currentName: user.name,
-                newName: data.name,
-                hasName: !!user.name
-            });
             
             // Use findOneAndUpdate to avoid validation issues with save()
             const updateData: any = {
@@ -266,16 +242,15 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
             // Ensure name is set (in case it was missing from previous OAuth)
             if (!user.name && data.name) {
                 updateData.name = data.name;
-                console.log("Google OAuth: Setting missing name to:", data.name);
             }
             
             try {
                 await User.findByIdAndUpdate(user._id, updateData, { runValidators: true });
             } catch (validationError: any) {
-                console.error("Google OAuth: User update validation error:", validationError);
+
                 // If validation fails, try to fix the user document
                 if (validationError.name === 'ValidationError' && validationError.errors?.name) {
-                    console.log("Google OAuth: Attempting to fix user with missing name");
+    
                     await User.findByIdAndUpdate(user._id, { 
                         name: data.name || data.email?.split('@')[0] || 'Google User',
                         lastLogin: new Date()
@@ -311,21 +286,15 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
         res.redirect(`${process.env.FRONTEND_URL}/auth/success?accessToken=${accessToken}`);
 
     } catch (error: any) {
-        console.error("Google OAuth callback error:", error);
+  
         
         // Handle specific OAuth errors
         if (error.code === 400 && error.message?.includes('invalid_grant')) {
-            console.error("Google OAuth: Invalid grant - check redirect URI and environment variables");
-            res.status(400).json({ 
-                error: "OAuth authentication failed", 
-                details: "Please try logging in again" 
-            });
             return;
         }
         
         // Handle other specific errors
         if (error.response?.data?.error) {
-            console.error("Google API error:", error.response.data);
             res.status(400).json({ 
                 error: "Google authentication failed", 
                 details: error.response.data.error_description || error.response.data.error 
@@ -409,7 +378,6 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
             updatedAt: user.updatedAt
         });
     } catch (error) {
-        console.error('Error fetching user:', error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -423,10 +391,6 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    console.log('Update user request - userId:', userId);
-    console.log('Update user request - body:', req.body);
-    console.log('Update user request - file:', req.file);
-
     const updates: any = {};
     
     // Handle name update from body
@@ -437,10 +401,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     // Handle image update from file upload
     if (req.file) {
       updates.image = req.file.path; // Cloudinary URL from multer
-      console.log('Image update - new path:', req.file.path);
     }
-
-    console.log('Updates to apply:', updates);
 
     // Only allow name and image updates (prevent role/email tampering)
     const allowedFields = ["name", "image"];
@@ -450,8 +411,6 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
         filteredUpdates[field] = updates[field];
       }
     }
-
-    console.log('Filtered updates:', filteredUpdates);
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
@@ -464,17 +423,8 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    console.log('Updated user response:', {
-      _id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      image: updatedUser.image,
-      role: updatedUser.role
-    });
-
     res.json(updatedUser);
   } catch (error) {
-    console.error("Update user error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -508,7 +458,6 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
     
     res.json({ message: "User deleted successfully" });
   } catch (error) {
-    console.error("Delete user error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

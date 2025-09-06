@@ -119,7 +119,6 @@ export const generateCertificateData = async (registrationId: string): Promise<I
       userId: (user._id as any).toString()
     };
   } catch (error) {
-    console.error('Error generating certificate data:', error);
     throw new Error(`Failed to generate certificate data: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -193,7 +192,6 @@ export const generateCertificatePDF = async (
 
     return Buffer.concat(chunks);
   } catch (error) {
-    console.error('Error generating PDF certificate:', error);
     throw new Error(`Failed to generate PDF certificate: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -264,7 +262,6 @@ export const generateStreamingCertificate = async (
 
     doc.end();
   } catch (error) {
-    console.error('Error generating streaming certificate:', error);
     res.status(500).json({ error: 'Failed to generate certificate' });
   }
 };
@@ -519,8 +516,8 @@ const addQRCode = async (
        .fillColor(theme.secondary)
        .text('Scan to verify', qrX + qrSize/2 - 20, qrY + qrSize + 5, { align: 'center' });
 
-  } catch (error) {
-    console.error('Error adding QR code:', error);
+  } catch (_error) {
+
     // Continue without QR code if generation fails
   }
 };
@@ -544,8 +541,8 @@ const addLogo = (doc: PDFKit.PDFDocument, theme: any): void => {
        .fillColor('#ffffff')
        .text('LOGO', logoX + logoSize/2, logoY + logoSize/2 + 4, { align: 'center' });
 
-  } catch (error) {
-    console.error('Error adding logo:', error);
+  } catch (_error) {
+
   }
 };
 
@@ -579,8 +576,7 @@ const addSignature = (
        .fillColor(theme.secondary)
        .text('Event Manager', signatureX + 75, signatureY + 25, { align: 'center' });
 
-  } catch (error) {
-    console.error('Error adding signature:', error);
+  } catch (_error) {
   }
 };
 

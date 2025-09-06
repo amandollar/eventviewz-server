@@ -54,7 +54,6 @@ export const submitApplication = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Submit application error:", error);
     return res.status(500).json({
       success: false,
       error: "Failed to submit application",
@@ -94,7 +93,6 @@ export const getMyApplication = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Get application error:", error);
     return res.status(500).json({
       success: false,
       error: "Failed to get application",
@@ -148,7 +146,6 @@ export const updateApplication = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Update application error:", error);
     return res.status(500).json({
       success: false,
       error: "Failed to update application",
@@ -198,7 +195,6 @@ export const getAllApplications = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Get all applications error:", error);
     res.status(500).json({
       success: false,
       error: "Failed to get applications",
@@ -240,7 +236,6 @@ export const getApplicationById = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Get application by ID error:", error);
     return res.status(500).json({
       success: false,
       error: "Failed to get application",
@@ -295,7 +290,6 @@ export const approveApplication = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Approve application error:", error);
     return res.status(500).json({
       success: false,
       error: "Failed to approve application",
@@ -345,7 +339,6 @@ export const rejectApplication = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Reject application error:", error);
     return res.status(500).json({
       success: false,
       error: "Failed to reject application",
@@ -374,7 +367,6 @@ export const getApplicationStats = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Get application stats error:", error);
     res.status(500).json({
       success: false,
       error: "Failed to get application statistics",

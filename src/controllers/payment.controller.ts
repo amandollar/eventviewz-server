@@ -32,16 +32,6 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
     } = req.body;
     const userId = (req as any).user.id;
 
-    if (!eventId || !ticketType) {
-      return res.status(400).json({ success: false, error: "Event ID and ticket type are required" });
-    }
-    if (!registrationNumber || !phoneNumber || !college || !department || !yearOfStudy) {
-      return res.status(400).json({
-        success: false,
-        error: "registrationNumber, phoneNumber, college, department and yearOfStudy are required",
-      });
-    }
-
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ success: false, error: "Event not found" });
 

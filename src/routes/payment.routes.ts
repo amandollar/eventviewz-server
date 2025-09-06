@@ -8,6 +8,8 @@ import {
   razorpayWebhook 
 } from "../controllers/payment.controller";
 import { paymentLimiter } from "../middlewares/rateLimit.middleware";
+import { validateSchema } from "../middlewares/validate.middleware";
+import {registerForEventSchema} from "../schemas/registration.schema";
 
 const paymentRouter = express.Router();
 
@@ -18,7 +20,7 @@ paymentRouter.post("/webhook", razorpayWebhook);
 paymentRouter.use(authMiddleware);
 
 // Create payment order for event registration
-paymentRouter.post("/create-order", paymentLimiter, createPaymentOrder);
+paymentRouter.post("/create-order", paymentLimiter,validateSchema(registerForEventSchema), createPaymentOrder);
 
 // Get payment status for a registration
 paymentRouter.get("/status/:registrationId", getPaymentStatus);

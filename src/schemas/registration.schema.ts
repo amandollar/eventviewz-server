@@ -34,6 +34,7 @@ export const registerForEventSchema = z.object({
 
 // Update registration schema
 export const updateRegistrationSchema = z.object({
+    eventId: z.string().min(1, "Event ID is required"),
     ticketType: z.string().min(1, "Ticket type is required").optional(),
     phoneNumber: z.string().min(10, "Phone number must be at least 10 characters").max(15, "Phone number too long").optional(),
     college: z.string().min(2, "College/University name is required").optional(),

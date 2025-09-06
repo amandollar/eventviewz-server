@@ -124,13 +124,12 @@ export const updateRegistration = async (req: Request, res: Response) => {
             specialRequirements,
             emergencyContact,
             tshirtSize,
-            notes
+            notes,
+            eventId
         } = req.body;
 
-        // Find user's registration (assuming they want to update their latest registration)
-        // You might want to add eventId to the request body to be more specific
-        const registration = await Registration.findOne({ user: userId })
-            .sort({ registeredAt: -1 })
+
+        const registration = await Registration.findOne({event: eventId, user: userId})
             .populate("event", "title date");
 
         if (!registration) {
@@ -270,8 +269,7 @@ export const updateRegistrationStatus = async (req: Request, res: Response) => {
 
         // Check if user can update this registration
         const event = registration.event as any;
-        if (user.role !== "admin" && user.role !== "organizer" && 
-            event.createdBy.toString() !== user.id.toString()) {
+        if (event.createdBy.toString() !== user.id.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "You don't have permission to update this registration"
@@ -300,6 +298,7 @@ export const updateRegistrationStatus = async (req: Request, res: Response) => {
     }
 };
 
+
 // Cancel registration
 export const cancelRegistration = async (req: Request, res: Response) => {
     try {
@@ -314,16 +313,17 @@ export const cancelRegistration = async (req: Request, res: Response) => {
             });
         }
 
-        // Check if user owns this registration
-        if ((registration.user as any).toString() !== userId.toString()) {
-            return res.status(403).json({
-                success: false,
-                message: "You can only cancel your own registration"
-            });
-        }
 
         // Check if event has already started
         const event = await Event.findById(registration.event);
+
+        if(event?.createdBy !== userId){
+            return res.status(403).json({
+                success: false,
+                message: "You don't have permission to cancel this registration"
+            });
+        }
+        
         if (event && new Date() >= new Date(event.date)) {
             return res.status(400).json({
                 success: false,
@@ -350,9 +350,11 @@ export const cancelRegistration = async (req: Request, res: Response) => {
             error: (error as any).message
         });
     }
-};
+}
 
 // Get hall ticket
+
+
 export const getHallTicket = async (req: Request, res: Response) => {
     try {
         const { registrationId } = req.params;
@@ -401,15 +403,7 @@ export const getHallTicket = async (req: Request, res: Response) => {
 export const getHallTicketForUser = async (req: Request, res: Response) => {
     try {
         const { userId, eventId } = req.params;
-        const adminUser = (req as any).user;
-
-        // Check if user is admin or organizer
-        if (adminUser.role !== "admin" && adminUser.role !== "organizer") {
-            return res.status(403).json({
-                success: false,
-                message: "Only admins and organizers can access this endpoint"
-            });
-        }
+        
 
         // Find the registration
         const registration = await Registration.findOne({ 
@@ -449,15 +443,6 @@ export const getHallTicketForUser = async (req: Request, res: Response) => {
 export const getAllEventHallTickets = async (req: Request, res: Response) => {
     try {
         const { eventId } = req.params;
-        const adminUser = (req as any).user;
-
-        // Check if user is admin or organizer
-        if (adminUser.role !== "admin" && adminUser.role !== "organizer") {
-            return res.status(403).json({
-                success: false,
-                message: "Only admins and organizers can access this endpoint"
-            });
-        }
 
         // Get all registrations for the event
         const registrations = await Registration.find({ event: eventId })

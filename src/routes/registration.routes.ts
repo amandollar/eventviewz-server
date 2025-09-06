@@ -27,7 +27,7 @@ registrationRouter.post("/register", registrationLimiter, validateSchema(registe
 registrationRouter.get("/user", getUserRegistrations); // User data
 registrationRouter.put("/update", validateSchema(updateRegistrationSchema), updateRegistration); // Update registration details
 registrationRouter.get("/ticket/:registrationId", getHallTicket); // Get tickets
-registrationRouter.delete("/cancel/:registrationId", registrationLimiter, cancelRegistration); // Strict rate limiting for cancellations
+registrationRouter.delete("/cancel/:registrationId",authorizeRoles("admin","organizer"), registrationLimiter, cancelRegistration); // Strict rate limiting for cancellations
 
 // Admin/Organizer routes - apply rate limiting
 registrationRouter.get("/event/:eventId", authorizeRoles("admin", "organizer"), getEventRegistrations);

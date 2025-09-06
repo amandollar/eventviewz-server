@@ -28,6 +28,8 @@ export interface IEvent extends Document {
   tickets: ITicket[];
   createdAt: Date;
   updatedAt: Date;
+  prizePool?: number;
+  goodies?:string
 }
 
 const ticketSchema = new Schema<ITicket>(
@@ -60,6 +62,8 @@ const eventSchema = new Schema<IEvent>(
 
     // Ticket categories (VIP, Regular, etc)
     tickets: { type: [ticketSchema], default: [] ,required: true},
+    prizePool: { type: Number, default: 0 },
+    goodies: { type: String },
   },
   { timestamps: true }
 );

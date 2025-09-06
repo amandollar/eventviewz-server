@@ -4,7 +4,7 @@ import Event from "../models/Event";
 // Create new event
 export const createEvent = async (req: Request, res: Response) => {
     try {
-        const { title, description, date, startTime, endTime, venue, location, category, participants, maxParticipants, tickets } = req.body;
+        const { title, description, date, startTime, endTime, venue, location, category, participants, maxParticipants, tickets ,prizePool,goodies} = req.body;
         const image = req.file?.path;
         
         // Get user ID from authenticated user (from JWT token)
@@ -30,6 +30,8 @@ export const createEvent = async (req: Request, res: Response) => {
             maxParticipants,
             currentParticipants: participants ? participants.length : 0,
             image,
+            prizePool,
+            goodies
         });
 
         res.status(201).json({
@@ -90,7 +92,7 @@ export const getEventById = async (req: Request, res: Response) => {
 export const updateEvent = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { title, description, date, startTime, endTime, venue, location, category, maxParticipants, isActive, tickets } = req.body;
+        const { title, description, date, startTime, endTime, venue, location, category, maxParticipants, isActive, tickets,prizePool,goodies } = req.body;
         const image = req.file?.path;
         
         // Get user info from auth middleware
@@ -137,6 +139,8 @@ export const updateEvent = async (req: Request, res: Response) => {
             isActive,
             tickets,
             image,
+            prizePool,
+            goodies
         }, { new: true });
 
         res.status(200).json({

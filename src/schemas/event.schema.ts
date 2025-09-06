@@ -40,6 +40,8 @@ export const createEventSchema = z.object({
     maxParticipants: z.coerce.number().min(1).max(10000).optional(),
     isActive: z.coerce.boolean().optional().default(true),
     tickets: z.array(ticketSchema),
+    prizePool: z.coerce.number().min(0).optional().default(0),
+    goodies: z.string().optional()
   }),
   file: fileSchema // Image is now mandatory (removed .optional())
 }).refine((data) => {
@@ -52,40 +54,6 @@ export const createEventSchema = z.object({
   path: ["body", "endTime"]
 });
 
-// Event update schema (partial fields allowed)
-export const updateEventSchema = z.object({
-  body: z.object({
-    title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title too long").optional(),
-    description: z.string().optional(),
-    date: z.coerce.date().optional(),
-    startTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Start time must be in HH:MM format (24-hour)").optional(),
-    endTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "End time must be in HH:MM format (24-hour)").optional(),
-    venue: z.string().min(2, "Venue must be at least 2 characters").max(200, "Venue too long").optional(),
-    location: z.string().optional(),
-    category: z.enum([
-      "hackathon",
-      "workshop",
-      "seminar", 
-      "cultural"
-    ]).optional(), // Fixed: matches EventCategory enum
-    maxParticipants: z.coerce.number().min(1).max(10000).optional(),
-    isActive: z.coerce.boolean().optional(),
-    tickets: z.array(ticketSchema).optional(),
-  }),
-  file: fileSchema
-}).refine(
-  (data) => Object.keys(data.body).length > 0,
-  { message: "At least one field must be provided for update" }
-).refine((data) => {
-  // Ensure end time is after start time if both are provided
-  if (data.body.startTime && data.body.endTime) {
-    return data.body.startTime < data.body.endTime;
-  }
-  return true;
-}, {
-  message: "End time must be after start time",
-  path: ["body", "endTime"]
-});
 
 // Event ID param schema
 export const eventIdSchema = z.object({
@@ -112,6 +80,8 @@ export const updateEventWithIdSchema = z.object({
     maxParticipants: z.coerce.number().min(1).max(10000).optional(),
     isActive: z.coerce.boolean().optional(),
     tickets: z.array(ticketSchema).optional(),
+    prizePool: z.coerce.number().min(0).optional().default(0),
+    goodies: z.string().optional()
   }),
   file: fileSchema
 });

@@ -1,18 +1,52 @@
 // src/schemas/organizerApplication.schema.ts
 import { z } from "zod";
 
+export const fileSchema = z
+  .object({
+    fieldname: z.string(),
+    originalname: z.string(),
+    encoding: z.string(),
+    mimetype: z.string(),
+    size: z.number(),
+    destination: z.string(),
+    filename: z.string(),
+    path: z.string(),
+  })
+  .optional();
+
+
 // Submit application schema
 export const submitApplicationSchema = z.object({
-  organizationName: z.string().min(2, "Organization name must be at least 2 characters").max(100, "Organization name too long"),
-  phoneNumber: z.string().min(10, "Phone number must be at least 10 characters").max(15, "Phone number too long"),
-  description: z.string().max(500, "Description too long").optional(),
+  body: z.object({
+    organizationName: z
+      .string()
+      .min(2, "Organization name must be at least 2 characters")
+      .max(100, "Organization name too long"),
+    phoneNumber: z
+      .string()
+      .min(10, "Phone number must be at least 10 characters")
+      .max(15, "Phone number too long"),
+    description: z.string().max(500, "Description too long").optional(),
+  }),
+  file: fileSchema, // Image is now mandatory (removed .optional())
 });
 
 // Update application schema
 export const updateApplicationSchema = z.object({
-  organizationName: z.string().min(2, "Organization name must be at least 2 characters").max(100, "Organization name too long").optional(),
-  phoneNumber: z.string().min(10, "Phone number must be at least 10 characters").max(15, "Phone number too long").optional(),
-  description: z.string().max(500, "Description too long").optional(),
+  body: z.object({
+    organizationName: z
+      .string()
+      .min(2, "Organization name must be at least 2 characters")
+      .max(100, "Organization name too long")
+      .optional(),
+    phoneNumber: z
+      .string()
+      .min(10, "Phone number must be at least 10 characters")
+      .max(15, "Phone number too long")
+      .optional(),
+    description: z.string().max(500, "Description too long").optional(),
+  }),
+  file: fileSchema, // Image is now optional for updates
 });
 
 // Approve application schema
@@ -22,7 +56,10 @@ export const approveApplicationSchema = z.object({
 
 // Reject application schema
 export const rejectApplicationSchema = z.object({
-  adminNotes: z.string().min(1, "Admin notes are required for rejection").max(200, "Admin notes too long"),
+  adminNotes: z
+    .string()
+    .min(1, "Admin notes are required for rejection")
+    .max(200, "Admin notes too long"),
 });
 
 // Application ID param schema

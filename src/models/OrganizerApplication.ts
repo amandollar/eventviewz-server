@@ -6,8 +6,8 @@ export interface IOrganizerApplication extends Document {
   user: IUser["_id"];
   organizationName: string;
   phoneNumber: string;
-  organizationImage?: string;
-  description?: string;
+  organizationImage: string;
+  description: string;
   status: "pending" | "approved" | "rejected";
   adminNotes?: string;
   appliedAt: Date;
@@ -37,11 +37,11 @@ const organizerApplicationSchema = new Schema<IOrganizerApplication>(
     },
     organizationImage: { 
       type: String, 
-      required: false 
+      required: true
     },
     description: { 
       type: String, 
-      required: false,
+      required: true,
       maxlength: 500
     },
     status: { 

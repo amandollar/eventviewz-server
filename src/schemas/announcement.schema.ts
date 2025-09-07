@@ -5,7 +5,7 @@ import { z } from "zod";
 export const createAnnouncementSchema = z.object({
   title: z.string().min(3).max(200),
   content: z.string().min(10).max(2000),
-  type: z.enum(["holiday", "duty-leave", "exclusive"]),
+  type: z.enum(["holiday", "duty-leave", "exclusive", "academic", "upcoming-event", "placement"]),
 });
 
 // Minimal update schema (any of the above, at least one)

@@ -8,6 +8,9 @@ export enum UserRole {
   export enum AnnouncementType {
     HOLIDAY = "holiday",
     DUTY_LEAVE = "duty-leave",
+    ACADEMIC = "academic",
+    UPCOMING_EVENT = "upcoming-event",
+    PLACEMENT = "placement",
     EXCLUSIVE = "exclusive",
   }
   

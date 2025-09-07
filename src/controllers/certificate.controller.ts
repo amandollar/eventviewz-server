@@ -3,13 +3,12 @@ import { Request, Response } from "express";
 import Registration from "../models/Register";
 import Event from "../models/Event";
 import User from "../models/User";
-import { 
-  generateCertificateData, 
-  generateStreamingCertificate,
-  validateCertificateOptions,
-  getAvailableThemes,
-  ICertificateOptions 
-} from "../utils/certificateGenerator";
+import {
+  generateStreamingTemplateCertificate,
+  getAvailableTemplates,
+  validateTemplateCertificateOptions,
+  ITemplateCertificateOptions
+} from "../utils/sharpTemplateGenerator";
 
 // Mark attendance for a user at an event
 export const markAttendance = async (req: Request, res: Response): Promise<void> => {
@@ -76,82 +75,7 @@ export const markAttendance = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// Generate certificate for a specific registration
-export const generateCertificate = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { registrationId } = req.params;
-    const managerId = (req as any).user?.id;
-    const { 
-      template, 
-      greeting, 
-      includeQRCode, 
-      primaryColor, 
-      secondaryColor,
-      theme,
-      includeLogo,
-      includeSignature,
-      fontSize
-    } = req.body;
-
-    if (!managerId) {
-      res.status(401).json({ error: "Manager not authenticated" });
-      return;
-    }
-
-    // Check if manager has permission
-    const manager = await User.findById(managerId);
-    if (!manager || !['admin', 'organizer'].includes(manager.role)) {
-      res.status(403).json({ error: "Insufficient permissions to generate certificates" });
-      return;
-    }
-
-    // Check if registration exists and attendance is marked
-    const registration = await Registration.findById(registrationId)
-      .populate('user', 'name email')
-      .populate('event', 'title date venue location');
-
-    if (!registration) {
-      res.status(404).json({ error: "Registration not found" });
-      return;
-    }
-
-    if (!registration.isAttended) {
-      res.status(400).json({ error: "Cannot generate certificate for non-attended event" });
-      return;
-    }
-
-    // Certificate options with enhanced features
-    const options: ICertificateOptions = {
-      template: template || 'classic',
-      greeting: greeting || 'Congratulations on successfully completing',
-      includeQRCode: includeQRCode || false,
-      primaryColor: primaryColor || undefined,
-      secondaryColor: secondaryColor || undefined,
-      theme: theme || 'corporate',
-      includeLogo: includeLogo || false,
-      includeSignature: includeSignature || false,
-      fontSize: fontSize || 'medium'
-    };
-
-    // Validate options
-    const validationErrors = validateCertificateOptions(options);
-    if (validationErrors.length > 0) {
-      res.status(400).json({ 
-        error: "Invalid certificate options", 
-        details: validationErrors 
-      });
-      return;
-    }
-
-    // Use streaming for better performance
-    await generateStreamingCertificate(registrationId!, options, res);
-
-  } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-// Get certificate data (without PDF generation)
+// Get certificate data (without generation)
 export const getCertificateData = async (req: Request, res: Response): Promise<void> => {
   try {
     const { registrationId } = req.params;
@@ -169,51 +93,43 @@ export const getCertificateData = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    // Get certificate data
-    const certificateData = await generateCertificateData(registrationId!);
+    // Get registration data
+    const registration = await Registration.findById(registrationId)
+      .populate('user', 'name email')
+      .populate('event', 'title date venue location')
+      .populate('attendedBy', 'name');
+
+    if (!registration) {
+      res.status(404).json({ error: "Registration not found" });
+      return;
+    }
+
+    if (!registration.isAttended) {
+      res.status(400).json({ error: "Cannot generate certificate for non-attended event" });
+      return;
+    }
+
+    const user = registration.user as any;
+    const event = registration.event as any;
+    const attendedBy = registration.attendedBy as any;
+
+    const certificateData = {
+      eventTitle: event.title,
+      userName: user.name,
+      eventDate: event.date,
+      eventVenue: event.venue,
+      eventLocation: event.location,
+      greeting: 'Congratulations on successfully completing',
+      issuedAt: registration.attendedAt || new Date(),
+      issuedBy: attendedBy?.name || 'Event Manager',
+      registrationId: (registration._id as any).toString(),
+      eventId: (event._id as any).toString(),
+      userId: (user._id as any).toString()
+    };
 
     res.json({
       success: true,
       certificateData
-    });
-
-  } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-// Get available certificate themes and options
-export const getCertificateThemes = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const managerId = (req as any).user?.id;
-
-    if (!managerId) {
-      res.status(401).json({ error: "Manager not authenticated" });
-      return;
-    }
-
-    // Check if manager has permission
-    const manager = await User.findById(managerId);
-    if (!manager || !['admin', 'organizer'].includes(manager.role)) {
-      res.status(403).json({ error: "Insufficient permissions" });
-      return;
-    }
-
-    const themes = getAvailableThemes();
-
-    res.json({
-      success: true,
-      themes,
-      templates: ['classic', 'modern', 'elegant'],
-      fontSizes: ['small', 'medium', 'large'],
-      defaultOptions: {
-        template: 'classic',
-        theme: 'corporate',
-        fontSize: 'medium',
-        includeQRCode: false,
-        includeLogo: false,
-        includeSignature: false
-      }
     });
 
   } catch (error) {
@@ -381,62 +297,6 @@ export const getEventAttendanceStats = async (req: Request, res: Response): Prom
   }
 };
 
-// Generate certificate for student's own registration
-export const generateStudentCertificate = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { registrationId } = req.params;
-    const userId = (req as any).user?.id;
-
-    if (!userId) {
-      res.status(401).json({ error: "User not authenticated" });
-      return;
-    }
-
-    // Check if registration exists and belongs to the authenticated user
-    const registration = await Registration.findById(registrationId)
-      .populate('user', 'name email')
-      .populate('event', 'title date venue location');
-
-    if (!registration) {
-      res.status(404).json({ error: "Registration not found" });
-      return;
-    }
-
-    // Check if the registration belongs to the authenticated user
-    const registrationUserId = typeof registration.user === 'string' 
-      ? registration.user 
-      : (registration.user as any)?._id?.toString();
-    
-    if (registrationUserId !== userId) {
-      res.status(403).json({ error: "You can only download certificates for your own registrations" });
-      return;
-    }
-
-    // Check if attendance is marked
-    if (!registration.isAttended) {
-      res.status(400).json({ error: "Cannot generate certificate for non-attended event" });
-      return;
-    }
-
-    // Use default certificate options for students
-    const options: ICertificateOptions = {
-      template: 'classic',
-      greeting: 'Congratulations on successfully completing',
-      includeQRCode: true,
-      theme: 'corporate',
-      includeLogo: true,
-      includeSignature: true,
-      fontSize: 'medium'
-    };
-
-    // Use streaming for better performance
-    await generateStreamingCertificate(registrationId!, options, res);
-
-  } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
 // Get all registrations for an event with attendance status
 export const getEventRegistrations = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -487,6 +347,214 @@ export const getEventRegistrations = async (req: Request, res: Response): Promis
         total: formattedRegistrations.length,
         attended: formattedRegistrations.filter(r => r.isAttended).length,
         pending: formattedRegistrations.filter(r => !r.isAttended).length
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// ===================
+// TEMPLATE-BASED CERTIFICATE GENERATION
+// ===================
+
+// Generate template-based certificate for a specific registration
+export const generateTemplateCertificate = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { registrationId } = req.params;
+    const managerId = (req as any).user?.id;
+    const { 
+      templateId,
+      includeQRCode,
+      customText,
+      fontSize,
+      textColor,
+      qrCodeColor
+    } = req.body;
+
+    if (!managerId) {
+      res.status(401).json({ error: "Manager not authenticated" });
+      return;
+    }
+
+    // Check if manager has permission
+    const manager = await User.findById(managerId);
+    if (!manager || !['admin', 'organizer'].includes(manager.role)) {
+      res.status(403).json({ error: "Insufficient permissions to generate certificates" });
+      return;
+    }
+
+    // Check if registration exists and attendance is marked
+    const registration = await Registration.findById(registrationId)
+      .populate('user', 'name email')
+      .populate('event', 'title date venue location');
+
+    if (!registration) {
+      res.status(404).json({ error: "Registration not found" });
+      return;
+    }
+
+    if (!registration.isAttended) {
+      res.status(400).json({ error: "Cannot generate certificate for non-attended event" });
+      return;
+    }
+
+    // Template certificate options
+    const options: ITemplateCertificateOptions = {
+      templateId: templateId || 'template1',
+      includeQRCode: includeQRCode || false,
+      customText: customText || {},
+      fontSize: fontSize || 'medium',
+      textColor: textColor || undefined,
+      qrCodeColor: qrCodeColor || undefined
+    };
+
+    // Validate options
+    const validationErrors = validateTemplateCertificateOptions(options);
+    if (validationErrors.length > 0) {
+      res.status(400).json({ 
+        error: "Invalid template certificate options", 
+        details: validationErrors 
+      });
+      return;
+    }
+
+    // Get registration data
+    const user = registration.user as any;
+    const event = registration.event as any;
+    const attendedBy = registration.attendedBy as any;
+
+    const certificateData = {
+      eventTitle: event.title,
+      userName: user.name,
+      eventDate: event.date,
+      eventVenue: event.venue,
+      eventLocation: event.location,
+      greeting: 'Congratulations on successfully completing',
+      issuedAt: registration.attendedAt || new Date(),
+      issuedBy: attendedBy?.name || 'Event Manager',
+      registrationId: (registration._id as any).toString(),
+      eventId: (event._id as any).toString(),
+      userId: (user._id as any).toString()
+    };
+
+    // Use template-based generation
+    await generateStreamingTemplateCertificate(certificateData, options, res);
+
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Generate template-based certificate for student's own registration
+export const generateStudentTemplateCertificate = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { registrationId } = req.params;
+    const userId = (req as any).user?.id;
+    const { templateId } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ error: "User not authenticated" });
+      return;
+    }
+
+    // Check if registration exists and belongs to the authenticated user
+    const registration = await Registration.findById(registrationId)
+      .populate('user', 'name email')
+      .populate('event', 'title date venue location');
+
+    if (!registration) {
+      res.status(404).json({ error: "Registration not found" });
+      return;
+    }
+
+    // Check if the registration belongs to the authenticated user
+    const registrationUserId = typeof registration.user === 'string' 
+      ? registration.user 
+      : (registration.user as any)?._id?.toString();
+    
+    if (registrationUserId !== userId) {
+      res.status(403).json({ error: "You can only download certificates for your own registrations" });
+      return;
+    }
+
+    // Check if attendance is marked
+    if (!registration.isAttended) {
+      res.status(400).json({ error: "Cannot generate certificate for non-attended event" });
+      return;
+    }
+
+    // Use default template options for students
+    const options: ITemplateCertificateOptions = {
+      templateId: templateId || 'template1',
+      includeQRCode: true,
+      fontSize: 'medium',
+      customText: {
+        title: 'EventViewz Organization',
+        greeting: 'This is to certify that',
+        completionText: 'has successfully completed'
+      }
+    };
+
+    // Get registration data
+    const user = registration.user as any;
+    const event = registration.event as any;
+    const attendedBy = registration.attendedBy as any;
+
+    const certificateData = {
+      eventTitle: event.title,
+      userName: user.name,
+      eventDate: event.date,
+      eventVenue: event.venue,
+      eventLocation: event.location,
+      greeting: 'Congratulations on successfully completing',
+      issuedAt: registration.attendedAt || new Date(),
+      issuedBy: attendedBy?.name || 'Event Manager',
+      registrationId: (registration._id as any).toString(),
+      eventId: (event._id as any).toString(),
+      userId: (user._id as any).toString()
+    };
+
+    // Use template-based generation
+    await generateStreamingTemplateCertificate(certificateData, options, res);
+
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Get available certificate templates
+export const getCertificateTemplates = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const managerId = (req as any).user?.id;
+
+    if (!managerId) {
+      res.status(401).json({ error: "Manager not authenticated" });
+      return;
+    }
+
+    // Check if manager has permission
+    const manager = await User.findById(managerId);
+    if (!manager || !['admin', 'organizer'].includes(manager.role)) {
+      res.status(403).json({ error: "Insufficient permissions" });
+      return;
+    }
+
+    const templates = getAvailableTemplates();
+
+    res.json({
+      success: true,
+      templates,
+      defaultOptions: {
+        templateId: 'template1',
+        includeQRCode: false,
+        fontSize: 'medium',
+        customText: {
+          title: 'EventViewz Organization',
+          greeting: 'This is to certify that',
+          completionText: 'has successfully completed'
+        }
       }
     });
 

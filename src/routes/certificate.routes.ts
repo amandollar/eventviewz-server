@@ -6,12 +6,12 @@ import { authorizeRoles } from "../middlewares/role.middleware";
 import {
   markAttendance,
   markBulkAttendance,
-  generateCertificate,
-  generateStudentCertificate,
   getCertificateData,
   getEventAttendanceStats,
   getEventRegistrations,
-  getCertificateThemes
+  generateTemplateCertificate,
+  generateStudentTemplateCertificate,
+  getCertificateTemplates
 } from "../controllers/certificate.controller";
 
 const certificateRouter = express.Router();
@@ -19,7 +19,7 @@ const certificateRouter = express.Router();
 // Certificate routes
 
 // Student certificate download (requires authentication only)
-certificateRouter.post("/student/generate/:registrationId", authMiddleware, generateStudentCertificate);
+certificateRouter.post("/student/template/:registrationId", authMiddleware, generateStudentTemplateCertificate);
 
 // All other routes require authentication and manager role (admin/organizer)
 certificateRouter.use(authMiddleware);
@@ -30,7 +30,7 @@ certificateRouter.post("/attendance/:registrationId", markAttendance);
 certificateRouter.post("/attendance/bulk", markBulkAttendance);
 
 // Certificate generation and data
-certificateRouter.post("/generate/:registrationId", generateCertificate);
+certificateRouter.post("/template/:registrationId", generateTemplateCertificate);
 certificateRouter.get("/data/:registrationId", getCertificateData);
 
 // Event management and statistics
@@ -38,6 +38,6 @@ certificateRouter.get("/event/:eventId/stats", getEventAttendanceStats);
 certificateRouter.get("/event/:eventId/registrations", getEventRegistrations);
 
 // Certificate customization options
-certificateRouter.get("/themes", getCertificateThemes);
+certificateRouter.get("/templates", getCertificateTemplates);
 
 export default certificateRouter;

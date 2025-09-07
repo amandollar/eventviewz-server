@@ -37,10 +37,6 @@ jobs:
           # Save logs to deploy.log so we can email them if something breaks
           curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }} 2>&1 | tee deploy.log
 
-          
-          echo "Intentionally failing deploy for testing"
-          exit 1
-
       - name: Upload deploy log
         if: failure()
         uses: actions/upload-artifact@v4

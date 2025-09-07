@@ -2,14 +2,13 @@ name: Backend CI/CD
 
 on:
   push:
-    branches: [ main ]   # run on push to main
+    branches: [ main ]
   pull_request:
-    branches: [ main ]   # run on PRs to main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -32,7 +31,45 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-
     steps:
       - name: Deploy to Render
-        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          # Save logs to deploy.log so we can email them if something breaks
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }} 2>&1 | tee deploy.log
+
+      - name: Upload deploy log
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: deploy-log
+          path: deploy.log
+
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: failure()   # run only if deploy job failed
+    steps:
+      - name: Download deploy log
+        uses: actions/download-artifact@v3
+        with:
+          name: deploy-log
+          path: .
+
+      - name: Send email on failure
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "Deployment failed: ${{ github.repository }}"
+          to: "eventviewzinfo@gmail.com"
+          from: "toxicempire3@gmail.com"
+          body: |
+            Deployment failed for repo: ${{ github.repository }}
+            Branch: ${{ github.ref }}
+            Workflow: ${{ github.workflow }}
+            Run ID: ${{ github.run_id }}
+
+            Please check attached log for details.
+          attachments: deploy.log

@@ -265,11 +265,11 @@ export const googleCallback = async (
     }
 
     const accessToken = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user._id, role: user.role },
       process.env.JWT_SECRET!,
       { expiresIn: "15m" }
     );
-    const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
+    const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, {
       expiresIn: "7d",
     });
 
@@ -287,8 +287,25 @@ export const googleCallback = async (
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
     res.cookie("refreshToken", refreshToken, cookieOptions);
+    
+    // Prepare user data for frontend
+    const userData = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      image: user.image || null,
+      role: user.role,
+      isEmailVerified: user.isEmailVerified,
+      lastLogin: user.lastLogin,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+    
+    // Encode user data for URL parameter
+    const encodedUserData = encodeURIComponent(JSON.stringify(userData));
+    
     res.redirect(
-      `${process.env.FRONTEND_URL}/auth/success?accessToken=${accessToken}`
+      `${process.env.FRONTEND_URL}/auth/success?accessToken=${accessToken}&user=${encodedUserData}`
     );
   } catch (error: any) {
     // Handle specific OAuth errors

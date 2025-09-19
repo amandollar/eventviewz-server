@@ -11,7 +11,6 @@ import {
   login
 } from "../controllers/auth.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
-import { authLimiter } from "../middlewares/rateLimit.middleware";
 import { validateSchema } from "../middlewares/validate.middleware";
 import {
   registerSchema,
@@ -23,15 +22,15 @@ import upload from "../middlewares/multer.middleware";
 const authRouter = express.Router();
 
 // Normal Authentication Routes (with strict rate limiting and validation)
-authRouter.post("/register", authLimiter, upload.single('image'), validateSchema(registerSchema), register);
-authRouter.post("/login", authLimiter, validateSchema(loginSchema), login);
+authRouter.post("/register", upload.single('image'), validateSchema(registerSchema), register);
+authRouter.post("/login", validateSchema(loginSchema), login);
 
 // Google OAuth Routes
-authRouter.get("/google", authLimiter, redirectToGoogle);
-authRouter.get("/google/callback", authLimiter, googleCallback);
+authRouter.get("/google", redirectToGoogle);
+authRouter.get("/google/callback", googleCallback);
 
 // Token Management
-authRouter.post("/refresh", authLimiter, refreshToken);
+authRouter.post("/refresh", refreshToken);
 authRouter.post("/logout", logout);
 
 // User Management (protected routes)

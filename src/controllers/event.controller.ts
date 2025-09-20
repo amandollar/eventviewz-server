@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Event from "../models/Event";
+import Registration from "../models/Register";
 
 // Create new event
 export const createEvent = async (req: Request, res: Response) => {
@@ -302,6 +303,150 @@ export const getEventsByCategory = async (req: Request, res: Response) => {
         res.status(500).json({
             success: false,
             message: "Failed to fetch events by category",
+            error: (error as any).message,
+        });
+    }
+};
+
+// Get event participants with detailed information
+export const getEventParticipants = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const userId = (req as any).user?.id;
+        const userRole = (req as any).user?.role;
+
+        if (!userId) {
+            res.status(401).json({
+                success: false,
+                message: "User not authenticated",
+            });
+            return;
+        }
+
+        // Find the event
+        const event = await Event.findById(id);
+        if (!event) {
+            res.status(404).json({
+                success: false,
+                message: "Event not found",
+            });
+            return;
+        }
+
+        // Check authorization: Only event owner or admin can view participants
+        if (userRole !== "admin" && (event.createdBy as any).toString() !== userId) {
+            res.status(403).json({
+                success: false,
+                message: "You can only view participants for events you created",
+            });
+            return;
+        }
+
+        // Get registrations for this event with user details
+        const registrations = await Registration.find({ event: id })
+            .populate('user', 'name email phone')
+            .sort({ registeredAt: -1 });
+
+        // Format participants data
+        const participants = registrations
+            .filter((reg: any) => reg.user) // Filter out registrations without user data
+            .map((reg: any) => ({
+                _id: reg.user._id,
+                name: reg.user.name,
+                email: reg.user.email,
+                phone: reg.user.phone,
+                registeredAt: reg.registeredAt,
+                ticketType: reg.ticketType,
+                isAttended: reg.isAttended,
+                attendedAt: reg.attendedAt
+            }));
+
+        res.status(200).json({
+            success: true,
+            message: "Participants fetched successfully",
+            participants,
+        });
+    } catch (error) {
+        console.error('Error in getEventParticipants:', error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch participants",
+            error: (error as any).message,
+        });
+    }
+};
+
+// Mark participant attendance
+export const markParticipantAttendance = async (req: Request, res: Response) => {
+    try {
+        const { id: eventId, participantId } = req.params;
+        const { isAttended } = req.body;
+        const userId = (req as any).user?.id;
+        const userRole = (req as any).user?.role;
+
+        if (!userId) {
+            res.status(401).json({
+                success: false,
+                message: "User not authenticated",
+            });
+            return;
+        }
+
+        // Find the event
+        const event = await Event.findById(eventId);
+        if (!event) {
+            res.status(404).json({
+                success: false,
+                message: "Event not found",
+            });
+            return;
+        }
+
+        // Check authorization: Only event owner or admin can mark attendance
+        if (userRole !== "admin" && (event.createdBy as any).toString() !== userId) {
+            res.status(403).json({
+                success: false,
+                message: "You can only mark attendance for events you created",
+            });
+            return;
+        }
+
+        // Find and update the registration
+        const Registration = require('../models/Register');
+        const registration = await Registration.findOneAndUpdate(
+            { event: eventId, user: participantId },
+            { 
+                isAttended,
+                attendedAt: isAttended ? new Date() : null
+            },
+            { new: true }
+        ).populate('user', 'name email phone');
+
+        if (!registration) {
+            res.status(404).json({
+                success: false,
+                message: "Participant registration not found",
+            });
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Attendance ${isAttended ? 'marked' : 'unmarked'} successfully`,
+            participant: {
+                _id: registration.user._id,
+                name: registration.user.name,
+                email: registration.user.email,
+                phone: registration.user.phone,
+                isAttended: registration.isAttended,
+                attendedAt: registration.attendedAt
+            }
+        });
+    } catch (error) {
+        console.error('Error in markParticipantAttendance:', error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to mark attendance",
             error: (error as any).message,
         });
     }

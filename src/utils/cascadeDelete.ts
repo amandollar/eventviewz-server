@@ -104,9 +104,7 @@ export const cascadeDeleteEvent = async (eventId: string): Promise<void> => {
   // Delete registrations for this event
   const registrationsDeleted = await safeDeleteMany("Registration", { event: eventId });
 
-
-  // Delete certificate for this event
-  const certificatesDeleted = await safeDeleteMany("Certificate", { event: eventId });
+  // Note: Certificate model not implemented yet, skipping certificate deletion
 
 
 };

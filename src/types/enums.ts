@@ -41,4 +41,17 @@ export enum UserRole {
     COMMUNITY = "community",
     OTHER = "other"
   }
+
+  export enum TicketType {
+    VIP = "VIP",
+    GENERAL = "General",
+    STUDENT = "Student",
+    EARLY_BIRD = "Early Bird",
+    GROUP = "Group",
+    CORPORATE = "Corporate",
+    FREE = "Free",
+    PREMIUM = "Premium",
+    STANDARD = "Standard",
+    BASIC = "Basic"
+  }
   

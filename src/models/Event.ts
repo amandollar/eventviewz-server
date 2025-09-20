@@ -1,6 +1,6 @@
 // src/models/Event.ts
 import mongoose, { Schema, Document } from "mongoose";
-import { EventCategory } from "../types/enums";
+import { EventCategory, TicketType } from "../types/enums";
 import { IUser } from "./User";
 import { cascadeDeleteEvent } from "../utils/cascadeDelete";
 
@@ -34,7 +34,7 @@ export interface IEvent extends Document {
 
 const ticketSchema = new Schema<ITicket>(
   {
-    type: { type: String, required: true, trim: true },
+    type: { type: String, enum: Object.values(TicketType), required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
     available: { type: Number, default: 100, min: 0 },
   },

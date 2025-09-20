@@ -411,10 +411,20 @@ export const markParticipantAttendance = async (req: Request, res: Response) => 
             return;
         }
 
-        // Find and update the registration
-        const Registration = require('../models/Register');
-        const registration = await Registration.findOneAndUpdate(
-            { event: eventId, user: participantId },
+        // Find the registration first
+        const existingRegistration = await Registration.findOne({ event: eventId, user: participantId });
+        
+        if (!existingRegistration) {
+            res.status(404).json({
+                success: false,
+                message: "Participant registration not found",
+            });
+            return;
+        }
+
+        // Update the registration
+        const registration = await Registration.findByIdAndUpdate(
+            existingRegistration._id,
             { 
                 isAttended,
                 attendedAt: isAttended ? new Date() : null
@@ -430,14 +440,17 @@ export const markParticipantAttendance = async (req: Request, res: Response) => 
             return;
         }
 
+        // Type assertion for populated user
+        const populatedUser = registration.user as any;
+
         res.status(200).json({
             success: true,
             message: `Attendance ${isAttended ? 'marked' : 'unmarked'} successfully`,
             participant: {
-                _id: registration.user._id,
-                name: registration.user.name,
-                email: registration.user.email,
-                phone: registration.user.phone,
+                _id: populatedUser._id,
+                name: populatedUser.name,
+                email: populatedUser.email,
+                phone: populatedUser.phone,
                 isAttended: registration.isAttended,
                 attendedAt: registration.attendedAt
             }

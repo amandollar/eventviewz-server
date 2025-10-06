@@ -70,13 +70,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     await user.save();
 
     // Set refresh token cookie
+    const isProd = process.env.NODE_ENV === "production";
+    // Use SameSite=None to allow cross-site cookies when frontend and backend are on different origins (useful in dev)
+    // Only set secure=true in production
     const cookieOptions = {
       httpOnly: true,
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? ("none" as const)
-          : ("strict" as const),
-      secure: process.env.NODE_ENV === "production",
+      sameSite: 'none' as const,
+      secure: isProd,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
     res.cookie("refreshToken", refreshToken, cookieOptions);
@@ -144,13 +144,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     await user.save();
 
     // Set refresh token cookie
+    const isProd = process.env.NODE_ENV === "production";
     const cookieOptions = {
       httpOnly: true,
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? ("none" as const)
-          : ("strict" as const),
-      secure: process.env.NODE_ENV === "production",
+      sameSite: 'none' as const,
+      secure: isProd,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
     res.cookie("refreshToken", refreshToken, cookieOptions);
@@ -276,14 +274,12 @@ export const googleCallback = async (
     user.refreshToken = refreshToken;
     await user.save();
 
-    // Cookie settings for production - need 'none' and 'secure' for cross-origin
+    // Cookie settings: use SameSite=None so browser will include the cookie on cross-site requests
+    const isProd = process.env.NODE_ENV === "production";
     const cookieOptions = {
       httpOnly: true,
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? ("none" as const)
-          : ("strict" as const),
-      secure: process.env.NODE_ENV === "production",
+      sameSite: 'none' as const,
+      secure: isProd,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
     res.cookie("refreshToken", refreshToken, cookieOptions);

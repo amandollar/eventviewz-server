@@ -71,11 +71,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     // Set refresh token cookie
     const isProd = process.env.NODE_ENV === "production";
-    // Use SameSite=None to allow cross-site cookies when frontend and backend are on different origins (useful in dev)
-    // Only set secure=true in production
+    // In development, use 'lax' for same-origin requests, 'none' for cross-origin
     const cookieOptions = {
       httpOnly: true,
-      sameSite: 'none' as const,
+      sameSite: isProd ? 'none' as const : 'lax' as const,
       secure: isProd,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
@@ -147,7 +146,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const isProd = process.env.NODE_ENV === "production";
     const cookieOptions = {
       httpOnly: true,
-      sameSite: 'none' as const,
+      sameSite: isProd ? 'none' as const : 'lax' as const,
       secure: isProd,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
@@ -274,11 +273,11 @@ export const googleCallback = async (
     user.refreshToken = refreshToken;
     await user.save();
 
-    // Cookie settings: use SameSite=None so browser will include the cookie on cross-site requests
+    // Cookie settings: use appropriate SameSite based on environment
     const isProd = process.env.NODE_ENV === "production";
     const cookieOptions = {
       httpOnly: true,
-      sameSite: 'none' as const,
+      sameSite: isProd ? 'none' as const : 'lax' as const,
       secure: isProd,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
@@ -335,8 +334,8 @@ export const refreshToken = async (
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    const user = await User.findById(decoded.id);
-
+    const user = await User.findById(decoded.id).select('+refreshToken');
+    
     if (!user || user.refreshToken !== token) {
       res.status(403).json({ error: "Invalid refresh token" });
       return;
@@ -349,7 +348,7 @@ export const refreshToken = async (
     );
 
     res.json({ accessToken: newAccessToken });
-  } catch {
+  } catch (error) {
     res.status(403).json({ error: "Refresh failed" });
     return;
   }

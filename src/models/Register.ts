@@ -30,14 +30,12 @@ export interface IRegistration extends Document {
   college: string;
   department: string;
   yearOfStudy: string;
-  dietaryPreferences?: string;
-  specialRequirements?: string;
-  emergencyContact?: {
-    name: string;
-    phone: string;
-    relationship: string;
+  // Organizer details (copied from event for reference)
+  organizerDetails?: {
+    logo: string;
+    organizationName: string;
+    organizerName: string;
   };
-  tshirtSize?: string;
 }
 
 const registrationSchema = new Schema<IRegistration>(
@@ -75,21 +73,11 @@ const registrationSchema = new Schema<IRegistration>(
       enum: ["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"],
       required: true 
     },
-    dietaryPreferences: { 
-      type: String, 
-      enum: ["Vegetarian", "Non-Vegetarian", "Vegan", "No Preference"],
-      required: false 
-    },
-    specialRequirements: { type: String, required: false },
-    emergencyContact: {
-      name: { type: String, required: false },
-      phone: { type: String, required: false },
-      relationship: { type: String, required: false }
-    },
-    tshirtSize: { 
-      type: String, 
-      enum: ["XS", "S", "M", "L", "XL", "XXL", "No T-shirt"],
-      required: false 
+    // Organizer details (copied from event for reference)
+    organizerDetails: {
+      logo: { type: String, required: false },
+      organizationName: { type: String, required: false, trim: true },
+      organizerName: { type: String, required: false, trim: true }
     }
   },
   { timestamps: true }

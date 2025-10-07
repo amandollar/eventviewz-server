@@ -10,17 +10,23 @@ export const ticketSchema = z.object({
   available: z.coerce.number().min(0, "Available tickets must be 0 or more").default(100),
 });
 
-// File upload schema for multer
+// File upload schema for multer (compatible with Cloudinary storage)
 export const fileSchema = z.object({
   fieldname: z.string(),
   originalname: z.string(),
   encoding: z.string(),
   mimetype: z.string(),
   size: z.number(),
-  destination: z.string(),
-  filename: z.string(),
+  destination: z.string().optional(), // Optional for Cloudinary storage
+  filename: z.string().optional(), // Optional for Cloudinary storage
   path: z.string()
 }).optional();
+
+// Multiple files schema for event creation
+export const multipleFilesSchema = z.object({
+  image: z.array(fileSchema).max(1).min(1, "Event image is required"),
+  organizerLogo: z.array(fileSchema).max(1).min(1, "Organizer logo is required")
+});
 
 // Event creation schema
 export const createEventSchema = z.object({
@@ -43,9 +49,25 @@ export const createEventSchema = z.object({
     isActive: z.coerce.boolean().optional().default(true),
     tickets: z.array(ticketSchema),
     prizePool: z.coerce.number().min(0).optional().default(0),
-    goodies: z.string().optional()
+    goodies: z.string().optional(),
+    dl: z.coerce.boolean().optional().default(false),
+    // Organizer details - handle both nested object and bracket notation
+    "organizerDetails[organizationName]": z.string().min(2, "Organization name must be at least 2 characters").optional(),
+    "organizerDetails[organizerName]": z.string().min(2, "Organizer name must be at least 2 characters").optional(),
+    organizerDetails: z.object({
+      organizationName: z.string().min(2, "Organization name must be at least 2 characters"),
+      organizerName: z.string().min(2, "Organizer name must be at least 2 characters")
+    }).optional()
+  }).refine((data) => {
+    // Ensure at least one form of organizer details is provided
+    const hasBracketNotation = data["organizerDetails[organizationName]"] && data["organizerDetails[organizerName]"];
+    const hasNestedObject = data.organizerDetails?.organizationName && data.organizerDetails?.organizerName;
+    return hasBracketNotation || hasNestedObject;
+  }, {
+    message: "Organizer details are required",
+    path: ["organizerDetails"]
   }),
-  file: fileSchema // Image is now mandatory (removed .optional())
+  files: multipleFilesSchema // Multiple files for event image and organizer logo
 }).refine((data) => {
   // Ensure end time is after start time
   const start = data.body.startTime;
@@ -83,7 +105,8 @@ export const updateEventWithIdSchema = z.object({
     isActive: z.coerce.boolean().optional(),
     tickets: z.array(ticketSchema).optional(),
     prizePool: z.coerce.number().min(0).optional().default(0),
-    goodies: z.string().optional()
+    goodies: z.string().optional(),
+    dl: z.coerce.boolean().optional().default(false)
   }),
   file: fileSchema
 });

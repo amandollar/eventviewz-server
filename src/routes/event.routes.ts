@@ -15,7 +15,10 @@ eventRouter.post("/",
   uploadLimiter, // Limit file uploads
   authMiddleware, 
   authorizeRoles("admin", "organizer"), 
-  upload.single("image"),
+  upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'organizerLogo', maxCount: 1 }
+  ]), // Handle multiple files (event image + organizer logo)
   validateSchema(createEventSchema), 
   createEvent
 );
@@ -37,7 +40,10 @@ eventRouter.put("/:id",
   uploadLimiter, // Limit file uploads
   authMiddleware, 
   authorizeRoles("admin", "organizer"), 
-  upload.single("image"),
+  upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'organizerLogo', maxCount: 1 }
+  ]), // Handle multiple files (event image + organizer logo)
   validateSchema(updateEventWithIdSchema), 
   updateEvent
 );

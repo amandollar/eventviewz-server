@@ -10,26 +10,7 @@ export const registerForEventSchema = z.object({
     phoneNumber: z.string().min(10, "Phone number must be at least 10 characters").max(15, "Phone number too long"),
     college: z.string().min(2, "College/University name is required"),
     department: z.string().min(2, "Department/Branch is required"),
-    yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"]),
-    // Event-specific preferences
-    dietaryPreferences: z.enum(["Vegetarian", "Non-Vegetarian", "Vegan", "No Preference"]).optional(),
-    specialRequirements: z.string().max(200, "Special requirements too long").optional(),
-    emergencyContact: z.object({
-        name: z.string().optional(),
-        phone: z.string().optional(),
-        relationship: z.string().optional()
-    }).optional().refine((data) => {
-        // If emergency contact is provided, all fields must be filled
-        if (data && (data.name || data.phone || data.relationship)) {
-            return data.name && data.phone && data.relationship;
-        }
-        return true;
-    }, {
-        message: "If emergency contact is provided, all fields (name, phone, relationship) are required"
-    }),
-    tshirtSize: z.enum(["XS", "S", "M", "L", "XL", "XXL", "No T-shirt"]).optional(),
-    // Additional notes
-    notes: z.string().max(300, "Notes too long").optional()
+    yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"])
 });
 
 // Update registration schema
@@ -39,16 +20,7 @@ export const updateRegistrationSchema = z.object({
     phoneNumber: z.string().min(10, "Phone number must be at least 10 characters").max(15, "Phone number too long").optional(),
     college: z.string().min(2, "College/University name is required").optional(),
     department: z.string().min(2, "Department/Branch is required").optional(),
-    yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"]).optional(),
-    dietaryPreferences: z.enum(["Vegetarian", "Non-Vegetarian", "Vegan", "No Preference"]).optional(),
-    specialRequirements: z.string().max(200, "Special requirements too long").optional(),
-    emergencyContact: z.object({
-        name: z.string().min(1, "Emergency contact name is required").optional(),
-        phone: z.string().min(10, "Emergency contact phone is required").optional(),
-        relationship: z.string().min(1, "Relationship is required").optional()
-    }).optional(),
-    tshirtSize: z.enum(["XS", "S", "M", "L", "XL", "XXL", "No T-shirt"]).optional(),
-    notes: z.string().max(300, "Notes too long").optional()
+    yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"]).optional()
 });
 
 // Update registration status schema

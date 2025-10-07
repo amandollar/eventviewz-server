@@ -15,12 +15,7 @@ export const registerForEvent = async (req: Request, res: Response) => {
             phoneNumber,
             college,
             department,
-            yearOfStudy,
-            dietaryPreferences,
-            specialRequirements,
-            emergencyContact,
-            tshirtSize,
-            notes
+            yearOfStudy
         } = req.body;
         const userId = (req as any).user.id;
 
@@ -80,11 +75,6 @@ export const registerForEvent = async (req: Request, res: Response) => {
             college,
             department,
             yearOfStudy,
-            dietaryPreferences,
-            specialRequirements,
-            emergencyContact: emergencyContact?.name && emergencyContact?.phone && emergencyContact?.relationship ? emergencyContact : undefined,
-            tshirtSize,
-            notes,
             confirmedAt: new Date()
         });
 
@@ -120,11 +110,6 @@ export const updateRegistration = async (req: Request, res: Response) => {
             college,
             department,
             yearOfStudy,
-            dietaryPreferences,
-            specialRequirements,
-            emergencyContact,
-            tshirtSize,
-            notes,
             eventId
         } = req.body;
 
@@ -153,11 +138,6 @@ export const updateRegistration = async (req: Request, res: Response) => {
         if (college) registration.college = college;
         if (department) registration.department = department;
         if (yearOfStudy) registration.yearOfStudy = yearOfStudy;
-        if (dietaryPreferences !== undefined) registration.dietaryPreferences = dietaryPreferences;
-        if (specialRequirements !== undefined) registration.specialRequirements = specialRequirements;
-        if (emergencyContact) registration.emergencyContact = emergencyContact;
-        if (tshirtSize !== undefined) registration.tshirtSize = tshirtSize;
-        if (notes !== undefined) registration.notes = notes;
 
         await registration.save();
 

@@ -5,14 +5,62 @@ import Registration from "../models/Register";
 // Create new event
 export const createEvent = async (req: Request, res: Response) => {
     try {
-        const { title, description, date, startTime, endTime, venue, location, category, participants, maxParticipants, tickets ,prizePool,goodies} = req.body;
-        const image = req.file?.path;
+        const { 
+            title, 
+            description, 
+            date, 
+            startTime, 
+            endTime, 
+            venue, 
+            location, 
+            category, 
+            participants, 
+            maxParticipants, 
+            tickets, 
+            prizePool, 
+            goodies,
+            dl,
+            "organizerDetails[organizationName]": organizationNameBracket,
+            "organizerDetails[organizerName]": organizerNameBracket,
+            organizerDetails
+        } = req.body;
+        
+        // Handle multiple file uploads
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        const image = files?.image?.[0]?.path;
+        const organizerLogo = files?.organizerLogo?.[0]?.path;
         
         // Get user ID from authenticated user (from JWT token)
         const createdBy = (req as any).user?.id;
         
         if (!createdBy) {
             res.status(401).json({ error: "User not authenticated" });
+            return;
+        }
+
+        // Validate required files
+        if (!image) {
+            res.status(400).json({ error: "Event image is required" });
+            return;
+        }
+
+        if (!organizerLogo) {
+            res.status(400).json({ error: "Organizer logo is required" });
+            return;
+        }
+
+        // Handle organizer details - support both bracket notation and nested object
+        let organizationName, organizerName;
+        if (organizerDetails && organizerDetails.organizationName && organizerDetails.organizerName) {
+            // Nested object format
+            organizationName = organizerDetails.organizationName;
+            organizerName = organizerDetails.organizerName;
+        } else if (organizationNameBracket && organizerNameBracket) {
+            // Bracket notation format
+            organizationName = organizationNameBracket;
+            organizerName = organizerNameBracket;
+        } else {
+            res.status(400).json({ error: "Organizer details are required" });
             return;
         }
 
@@ -32,7 +80,13 @@ export const createEvent = async (req: Request, res: Response) => {
             currentParticipants: participants ? participants.length : 0,
             image,
             prizePool,
-            goodies
+            goodies,
+            dl: dl || false,
+            organizerDetails: {
+                logo: organizerLogo,
+                organizationName,
+                organizerName
+            }
         });
 
         res.status(201).json({
@@ -41,6 +95,7 @@ export const createEvent = async (req: Request, res: Response) => {
             event,
         });
     } catch (error) {
+        console.error('Error creating event:', error);
         res.status(500).json({
             success: false,
             message: "Failed to create event",
@@ -93,8 +148,29 @@ export const getEventById = async (req: Request, res: Response) => {
 export const updateEvent = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { title, description, date, startTime, endTime, venue, location, category, maxParticipants, isActive, tickets,prizePool,goodies } = req.body;
-        const image = req.file?.path;
+        const { 
+            title, 
+            description, 
+            date, 
+            startTime, 
+            endTime, 
+            venue, 
+            location, 
+            category, 
+            maxParticipants, 
+            isActive, 
+            tickets, 
+            prizePool, 
+            goodies,
+            dl,
+            "organizerDetails[organizationName]": organizationName,
+            "organizerDetails[organizerName]": organizerName
+        } = req.body;
+        
+        // Handle multiple file uploads
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        const image = files?.image?.[0]?.path;
+        const organizerLogo = files?.organizerLogo?.[0]?.path;
         
         // Get user info from auth middleware
         const userId = (req as any).user?.id;
@@ -127,7 +203,8 @@ export const updateEvent = async (req: Request, res: Response) => {
             return;
         }
 
-        const event = await Event.findByIdAndUpdate(id, {
+        // Prepare update data
+        const updateData: any = {
             title,
             description,
             date,
@@ -139,10 +216,35 @@ export const updateEvent = async (req: Request, res: Response) => {
             maxParticipants,
             isActive,
             tickets,
-            image,
             prizePool,
-            goodies
-        }, { new: true });
+            goodies,
+            dl
+        };
+
+        // Only update image if new one provided
+        if (image) {
+            updateData.image = image;
+        }
+
+        // Only update organizer details if provided
+        if (organizationName && organizerName) {
+            updateData.organizerDetails = {
+                organizationName,
+                organizerName
+            };
+            // Only update logo if new one provided
+            if (organizerLogo) {
+                updateData.organizerDetails.logo = organizerLogo;
+            } else {
+                // Keep existing logo if not updating
+                const existingEvent = await Event.findById(id);
+                if (existingEvent?.organizerDetails?.logo) {
+                    updateData.organizerDetails.logo = existingEvent.organizerDetails.logo;
+                }
+            }
+        }
+
+        const event = await Event.findByIdAndUpdate(id, updateData, { new: true });
 
         res.status(200).json({
             success: true,

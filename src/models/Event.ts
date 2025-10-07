@@ -29,7 +29,14 @@ export interface IEvent extends Document {
   createdAt: Date;
   updatedAt: Date;
   prizePool?: number;
-  goodies?:string
+  goodies?: string;
+  // Organizer details
+    organizerDetails: {
+        logo: string;
+        organizationName: string;
+        organizerName: string;
+    };
+    dl: boolean;
 }
 
 const ticketSchema = new Schema<ITicket>(
@@ -64,6 +71,13 @@ const eventSchema = new Schema<IEvent>(
     tickets: { type: [ticketSchema], default: [] ,required: true},
     prizePool: { type: Number, default: 0 },
     goodies: { type: String },
+    // Organizer details
+    organizerDetails: {
+        logo: { type: String, required: true },
+        organizationName: { type: String, required: true, trim: true },
+        organizerName: { type: String, required: true, trim: true }
+    },
+    dl: { type: Boolean, required: true, default: false }
   },
   { timestamps: true }
 );

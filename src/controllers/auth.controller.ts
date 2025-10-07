@@ -332,9 +332,12 @@ export const refreshToken = async (
     return;
   }
 
+  console.log("refresh token", token);
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
     const user = await User.findById(decoded.id).select('+refreshToken');
+    console.log("user", user);
     
     if (!user || user.refreshToken !== token) {
       res.status(403).json({ error: "Invalid refresh token" });

@@ -164,7 +164,8 @@ export const updateEvent = async (req: Request, res: Response) => {
             goodies,
             dl,
             "organizerDetails[organizationName]": organizationName,
-            "organizerDetails[organizerName]": organizerName
+            "organizerDetails[organizerName]": organizerName,
+            organizerDetails
         } = req.body;
         
         // Handle multiple file uploads
@@ -226,25 +227,22 @@ export const updateEvent = async (req: Request, res: Response) => {
             updateData.image = image;
         }
 
-        // Only update organizer details if provided
-        if (organizationName && organizerName) {
-            updateData.organizerDetails = {
-                organizationName,
-                organizerName
-            };
-            // Only update logo if new one provided
-            if (organizerLogo) {
-                updateData.organizerDetails.logo = organizerLogo;
-            } else {
-                // Keep existing logo if not updating
-                const existingEvent = await Event.findById(id);
-                if (existingEvent?.organizerDetails?.logo) {
-                    updateData.organizerDetails.logo = existingEvent.organizerDetails.logo;
-                }
-            }
+        // Organizer details updates (support both nested object and bracket notation)
+        const parsedOrganizationName = (organizerDetails && organizerDetails.organizationName) || organizationName;
+        const parsedOrganizerName = (organizerDetails && organizerDetails.organizerName) || organizerName;
+
+        // Use dot-notation to avoid overwriting the whole subdocument
+        if (typeof parsedOrganizationName === "string" && parsedOrganizationName.trim().length > 0) {
+            updateData["organizerDetails.organizationName"] = parsedOrganizationName;
+        }
+        if (typeof parsedOrganizerName === "string" && parsedOrganizerName.trim().length > 0) {
+            updateData["organizerDetails.organizerName"] = parsedOrganizerName;
+        }
+        if (organizerLogo) {
+            updateData["organizerDetails.logo"] = organizerLogo;
         }
 
-        const event = await Event.findByIdAndUpdate(id, updateData, { new: true });
+        const event = await Event.findByIdAndUpdate(id, { $set: updateData }, { new: true });
 
         res.status(200).json({
             success: true,

@@ -106,7 +106,15 @@ export const updateEventWithIdSchema = z.object({
     tickets: z.array(ticketSchema).optional(),
     prizePool: z.coerce.number().min(0).optional().default(0),
     goodies: z.string().optional(),
-    dl: z.coerce.boolean().optional().default(false)
+    dl: z.coerce.boolean().optional().default(false),
+    // Allow organizer fields on update (partial updates permitted)
+    "organizerDetails[organizationName]": z.string().min(2, "Organization name must be at least 2 characters").optional(),
+    "organizerDetails[organizerName]": z.string().min(2, "Organizer name must be at least 2 characters").optional(),
+    organizerDetails: z.object({
+      organizationName: z.string().min(2, "Organization name must be at least 2 characters").optional(),
+      organizerName: z.string().min(2, "Organizer name must be at least 2 characters").optional(),
+      logo: z.string().optional()
+    }).optional()
   }),
   file: fileSchema
 });

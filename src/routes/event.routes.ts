@@ -27,10 +27,12 @@ eventRouter.post("/",
 eventRouter.get("/", getEvents);
 eventRouter.get("/search", searchEvents);
 eventRouter.get("/category/:category", getEventsByCategory);
-eventRouter.get("/:id", getEventById);
 
-// Protected endpoints for organizers/admins
+// Protected endpoints for organizers/admins (place before dynamic :id to avoid shadowing)
 eventRouter.get("/my/events", authMiddleware, authorizeRoles("admin", "organizer"), getMyEvents);
+
+// Dynamic fetch by id (kept after specific routes)
+eventRouter.get("/:id", getEventById);
 eventRouter.get("/:id/participants", authMiddleware, authorizeRoles("admin", "organizer"), getEventParticipants);
 eventRouter.patch("/:id/participants/:participantId/attendance", authMiddleware, authorizeRoles("admin", "organizer"), markParticipantAttendance);
 

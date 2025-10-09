@@ -283,7 +283,7 @@ export const updateRegistrationStatus = async (req: Request, res: Response) => {
 export const cancelRegistration = async (req: Request, res: Response) => {
     try {
         const { registrationId } = req.params;
-        const userId = (req as any).user.id;
+        const user = (req as any).user; // contains id and role
 
         const registration = await Registration.findById(registrationId);
         if (!registration) {
@@ -297,7 +297,10 @@ export const cancelRegistration = async (req: Request, res: Response) => {
         // Check if event has already started
         const event = await Event.findById(registration.event);
 
-        if(event?.createdBy !== userId){
+        // Allow admin always; organizer must own the event
+        const isAdmin = user?.role === "admin";
+        const isEventOwner = event && (event.createdBy as any)?.toString?.() === user.id.toString();
+        if (!isAdmin && !isEventOwner) {
             return res.status(403).json({
                 success: false,
                 message: "You don't have permission to cancel this registration"
@@ -333,8 +336,6 @@ export const cancelRegistration = async (req: Request, res: Response) => {
 }
 
 // Get hall ticket
-
-
 export const getHallTicket = async (req: Request, res: Response) => {
     try {
         const { registrationId } = req.params;

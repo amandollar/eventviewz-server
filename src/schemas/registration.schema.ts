@@ -7,7 +7,10 @@ export const registerForEventSchema = z.object({
     ticketType: z.string().min(1, "Ticket type is required"),
     // Personal Information
     registrationNumber: z.string().min(1, "Registration number is required"),
-    phoneNumber: z.string().min(10, "Phone number must be at least 10 characters").max(15, "Phone number too long"),
+    phoneNumber: z.string()
+      .trim()
+      .regex(/^\d{10}$/,
+        "Phone number must be exactly 10 digits"),
     college: z.string().min(2, "College/University name is required"),
     department: z.string().min(2, "Department/Branch is required"),
     yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"])
@@ -17,7 +20,11 @@ export const registerForEventSchema = z.object({
 export const updateRegistrationSchema = z.object({
     eventId: z.string().min(1, "Event ID is required"),
     ticketType: z.string().min(1, "Ticket type is required").optional(),
-    phoneNumber: z.string().min(10, "Phone number must be at least 10 characters").max(15, "Phone number too long").optional(),
+    phoneNumber: z.string()
+      .trim()
+      .regex(/^\d{10}$/,
+        "Phone number must be exactly 10 digits")
+      .optional(),
     college: z.string().min(2, "College/University name is required").optional(),
     department: z.string().min(2, "Department/Branch is required").optional(),
     yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"]).optional()

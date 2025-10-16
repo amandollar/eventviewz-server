@@ -3,8 +3,7 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import Registration from "../models/Register";
 import Event from "../models/Event";
-import { generateHallTicket } from "../utils/hallTicket";
-import mongoose from "mongoose";
+import { confirmRegistrationEffects } from "../utils/registrationSideEffects";
 
 // Initialize Razorpay
 const { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } = process.env;
@@ -18,7 +17,7 @@ const razorpay = new Razorpay({
 
 // ===================
 // Create Payment Order
-
+// ===================
 export const createPaymentOrder = async (req: Request, res: Response) => {
   try {
     const {
@@ -116,7 +115,7 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
     if (eventType === "payment.captured") {
       const payment = payload.payload.payment.entity as any;
 
-      // 1) Resolve registration: primary by order_id, fallback by notes (userId + eventId)
+      // Original logic: resolve by order_id, optional fallback by notes
       let registration: any = await Registration.findOne({ paymentOrderId: payment.order_id });
       if (!registration && payment?.notes?.userId && payment?.notes?.eventId) {
         registration = await Registration.findOne({
@@ -132,82 +131,16 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
         return res.status(404).json({ success: false, error: "Registration not found for this payment" });
       }
 
-      // Idempotency: if already confirmed, acknowledge
-      if (registration.status === "confirmed") {
-        // After successful capacity confirmation, ensure hall ticket is generated
-        const regAfter = await Registration.findById(registration._id);
-        if (regAfter && !regAfter.hallTicket) {
-          const hallTicket = await generateHallTicket(String(registration._id));
-          regAfter.hallTicket = JSON.stringify(hallTicket);
-          await regAfter.save();
-        }
-
-        return res.status(200).json({ success: true });
+      if (registration.status !== "confirmed") {
+        registration.status = "confirmed";
+        registration.paymentId = payment.id;
+        registration.paymentVerifiedAt = new Date();
+        registration.confirmedAt = new Date();
+        await registration.save();
+        await confirmRegistrationEffects(registration);
       }
 
-      // 2) Verify amount and currency (defensive)
-      if (
-        typeof registration.amount === "number" &&
-        (Number(payment.amount) !== Number(registration.amount) * 100 || String(payment.currency) !== "INR")
-      ) {
-        return res.status(400).json({ success: false, error: "Payment amount/currency mismatch" });
-      }
-
-      // 3) Enforce capacity and ticket availability atomically using a transaction
-      const session = await mongoose.startSession();
-      try {
-        await session.withTransaction(async () => {
-          const eventId = registration.event;
-          const ticketType = registration.ticketType;
-
-          // Atomically decrement ticket availability and increment participants if capacity allows
-          const updatedEvent = await Event.findOneAndUpdate(
-            {
-              _id: eventId,
-              isActive: true,
-              "tickets.type": ticketType,
-              "tickets.$.available": { $gt: 0 },
-              $or: [
-                { maxParticipants: { $exists: false } },
-                { maxParticipants: null },
-                { $expr: { $gt: ["$maxParticipants", "$currentParticipants"] } },
-              ],
-            },
-            {
-              $inc: { "tickets.$.available": -1, currentParticipants: 1 },
-              $addToSet: { participants: registration.user },
-            },
-            { new: true, session }
-          );
-
-          if (!updatedEvent) {
-            throw new Error("SOLD_OUT");
-          }
-
-          // Confirm registration if not already confirmed
-          await Registration.updateOne(
-            { _id: registration._id, status: { $ne: "confirmed" } },
-            {
-              $set: {
-                status: "confirmed",
-                paymentId: payment.id,
-                paymentVerifiedAt: new Date(),
-                confirmedAt: new Date(),
-              },
-            },
-            { session }
-          );
-        });
-
-        return res.status(200).json({ success: true });
-      } catch (txErr: any) {
-        if (txErr?.message === "SOLD_OUT") {
-          return res.status(409).json({ success: false, error: "Event sold out or ticket unavailable" });
-        }
-        return res.status(500).json({ success: false, error: "Failed to confirm payment" });
-      } finally {
-        session.endSession();
-      }
+      return res.status(200).json({ success: true });
     }
 
     if (eventType === "payment.failed") {

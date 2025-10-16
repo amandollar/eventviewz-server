@@ -39,11 +39,14 @@ export const createEventSchema = z.object({
     venue: z.string().min(2, "Venue must be at least 2 characters").max(200, "Venue too long"),
     location: z.string().optional(),
     category: z.enum([
+      "edurev",
       "hackathon",
       "workshop", 
       "seminar",
       "cultural"
-    ]), // Fixed: matches EventCategory enum
+    ], {
+      message: "Please select a valid category"
+    }), // Fixed: matches EventCategory enum
     participants: z.array(z.string()).optional(),
     maxParticipants: z.coerce.number().min(1).max(10000).optional(),
     isActive: z.coerce.boolean().optional().default(true),
@@ -96,6 +99,7 @@ export const updateEventWithIdSchema = z.object({
     venue: z.string().min(2, "Venue must be at least 2 characters").max(200, "Venue too long").optional(),
     location: z.string().optional(),
     category: z.enum([
+      "edurev",
       "hackathon",
       "workshop",
       "seminar",

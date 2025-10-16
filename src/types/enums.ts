@@ -15,6 +15,7 @@ export enum UserRole {
   }
   
   export enum EventCategory {
+    EDUREV = "edurev",
     HACKATHON = "hackathon",
     WORKSHOP = "workshop",
     SEMINAR = "seminar",

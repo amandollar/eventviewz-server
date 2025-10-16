@@ -5,9 +5,9 @@ import {
   getPaymentStatus, 
   cancelPaymentOrder, 
   getPaymentHistory, 
-  razorpayWebhook 
+  razorpayWebhook, 
+  renewPaymentOrder 
 } from "../controllers/payment.controller";
-import { paymentLimiter } from "../middlewares/rateLimit.middleware";
 import { validateSchema } from "../middlewares/validate.middleware";
 import {registerForEventSchema} from "../schemas/registration.schema";
 
@@ -20,13 +20,16 @@ paymentRouter.post("/webhook", razorpayWebhook);
 paymentRouter.use(authMiddleware);
 
 // Create payment order for event registration
-paymentRouter.post("/create-order", paymentLimiter,validateSchema(registerForEventSchema), createPaymentOrder);
+paymentRouter.post("/create-order",validateSchema(registerForEventSchema), createPaymentOrder);
 
 // Get payment status for a registration
 paymentRouter.get("/status/:registrationId", getPaymentStatus);
 
 // Cancel payment order
 paymentRouter.post("/cancel/:registrationId", cancelPaymentOrder);
+
+// Renew payment order for pending registration
+paymentRouter.post("/renew-order/:registrationId", renewPaymentOrder);
 
 // Get user's payment history
 paymentRouter.get("/history", getPaymentHistory);

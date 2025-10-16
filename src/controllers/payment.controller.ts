@@ -3,17 +3,22 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import Registration from "../models/Register";
 import Event from "../models/Event";
-import { confirmRegistrationEffects } from "../utils/registrationSideEffects";
+import { generateHallTicket } from "../utils/hallTicket";
+import mongoose from "mongoose";
 
 // Initialize Razorpay
+const { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } = process.env;
+if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+  throw new Error("Missing Razorpay credentials: RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET");
+}
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_1234567890",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "test_secret_key_1234567890",
+  key_id: RAZORPAY_KEY_ID,
+  key_secret: RAZORPAY_KEY_SECRET,
 });
 
 // ===================
 // Create Payment Order
-// ===================
+
 export const createPaymentOrder = async (req: Request, res: Response) => {
   try {
     const {
@@ -24,28 +29,25 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       college,
       department,
       yearOfStudy,
-      dietaryPreferences,
-      specialRequirements,
-      emergencyContact,
-      tshirtSize,
-      notes,
     } = req.body;
     const userId = (req as any).user.id;
 
-    const event = await Event.findById(eventId);
+    const event: any = await Event.findById(eventId);
     if (!event) return res.status(404).json({ success: false, error: "Event not found" });
+    if (!event.isActive) return res.status(400).json({ success: false, error: "Event is not active" });
 
     const ticket = event.tickets.find((t: any) => t.type === ticketType);
     if (!ticket) return res.status(404).json({ success: false, error: "Ticket type not found" });
     if (ticket.available <= 0) return res.status(400).json({ success: false, error: "Tickets not available" });
+    if (event.maxParticipants && Array.isArray(event.participants) && event.participants.length >= event.maxParticipants) {
+      return res.status(400).json({ success: false, error: "Event is full" });
+    }
 
     const existing = await Registration.findOne({ user: userId, event: eventId });
     if (existing) return res.status(400).json({ success: false, error: "Already registered for this event" });
 
-
-    const eventIdStr = String(eventId); // ensures it’s a string
+    const eventIdStr = String(eventId);
     const userIdStr = String(userId);
-
 
     const order = await razorpay.orders.create({
       amount: ticket.price * 100,
@@ -67,11 +69,6 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       college,
       department,
       yearOfStudy,
-      dietaryPreferences,
-      specialRequirements,
-      emergencyContact: emergencyContact?.name && emergencyContact?.phone && emergencyContact?.relationship ? emergencyContact : undefined,
-      tshirtSize,
-      notes,
     });
 
     await registration.save();
@@ -91,7 +88,7 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
         ticketType, 
         amount: registration.amount 
       },
-      razorpayKeyId: process.env.RAZORPAY_KEY_ID || "rzp_test_1234567890"
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: "Failed to create payment order" });
@@ -105,32 +102,116 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET!;
     const signature = req.headers["x-razorpay-signature"] as string;
-    const body = JSON.stringify(req.body);
+    const rawBody = (req as any).body as Buffer; // raw body from express.raw
 
-    // Verify webhook
-    const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");
+    // Verify webhook using raw body
+    const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
     if (expected !== signature) {
       return res.status(400).json({ success: false, error: "Invalid webhook signature" });
     }
 
-    const eventType = req.body.event;
+    const payload = JSON.parse(rawBody.toString("utf8"));
+    const eventType = payload.event;
 
     if (eventType === "payment.captured") {
-      const payment = req.body.payload.payment.entity;
-      const registration = await Registration.findOne({ paymentOrderId: payment.order_id });
-      if (registration && registration.status !== "confirmed") {
-        registration.status = "confirmed";
-        registration.paymentId = payment.id;
-        registration.paymentVerifiedAt = new Date();
-        registration.confirmedAt = new Date();
-        await registration.save();
+      const payment = payload.payload.payment.entity as any;
 
-        await confirmRegistrationEffects(registration);
+      // 1) Resolve registration: primary by order_id, fallback by notes (userId + eventId)
+      let registration: any = await Registration.findOne({ paymentOrderId: payment.order_id });
+      if (!registration && payment?.notes?.userId && payment?.notes?.eventId) {
+        registration = await Registration.findOne({
+          user: String(payment.notes.userId),
+          event: String(payment.notes.eventId),
+          status: { $in: ["pending", "failed", "cancelled"] },
+        })
+          .sort({ createdAt: -1 })
+          .exec();
+      }
+
+      if (!registration) {
+        return res.status(404).json({ success: false, error: "Registration not found for this payment" });
+      }
+
+      // Idempotency: if already confirmed, acknowledge
+      if (registration.status === "confirmed") {
+        // After successful capacity confirmation, ensure hall ticket is generated
+        const regAfter = await Registration.findById(registration._id);
+        if (regAfter && !regAfter.hallTicket) {
+          const hallTicket = await generateHallTicket(String(registration._id));
+          regAfter.hallTicket = JSON.stringify(hallTicket);
+          await regAfter.save();
+        }
+
+        return res.status(200).json({ success: true });
+      }
+
+      // 2) Verify amount and currency (defensive)
+      if (
+        typeof registration.amount === "number" &&
+        (Number(payment.amount) !== Number(registration.amount) * 100 || String(payment.currency) !== "INR")
+      ) {
+        return res.status(400).json({ success: false, error: "Payment amount/currency mismatch" });
+      }
+
+      // 3) Enforce capacity and ticket availability atomically using a transaction
+      const session = await mongoose.startSession();
+      try {
+        await session.withTransaction(async () => {
+          const eventId = registration.event;
+          const ticketType = registration.ticketType;
+
+          // Atomically decrement ticket availability and increment participants if capacity allows
+          const updatedEvent = await Event.findOneAndUpdate(
+            {
+              _id: eventId,
+              isActive: true,
+              "tickets.type": ticketType,
+              "tickets.$.available": { $gt: 0 },
+              $or: [
+                { maxParticipants: { $exists: false } },
+                { maxParticipants: null },
+                { $expr: { $gt: ["$maxParticipants", "$currentParticipants"] } },
+              ],
+            },
+            {
+              $inc: { "tickets.$.available": -1, currentParticipants: 1 },
+              $addToSet: { participants: registration.user },
+            },
+            { new: true, session }
+          );
+
+          if (!updatedEvent) {
+            throw new Error("SOLD_OUT");
+          }
+
+          // Confirm registration if not already confirmed
+          await Registration.updateOne(
+            { _id: registration._id, status: { $ne: "confirmed" } },
+            {
+              $set: {
+                status: "confirmed",
+                paymentId: payment.id,
+                paymentVerifiedAt: new Date(),
+                confirmedAt: new Date(),
+              },
+            },
+            { session }
+          );
+        });
+
+        return res.status(200).json({ success: true });
+      } catch (txErr: any) {
+        if (txErr?.message === "SOLD_OUT") {
+          return res.status(409).json({ success: false, error: "Event sold out or ticket unavailable" });
+        }
+        return res.status(500).json({ success: false, error: "Failed to confirm payment" });
+      } finally {
+        session.endSession();
       }
     }
 
     if (eventType === "payment.failed") {
-      const payment = req.body.payload.payment.entity;
+      const payment = payload.payload.payment.entity;
       const registration = await Registration.findOne({ paymentOrderId: payment.order_id });
       if (registration) {
         registration.status = "failed";
@@ -152,12 +233,12 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
     const { registrationId } = req.params;
     const userId = (req as any).user.id;
 
-    const registration = await Registration.findById(registrationId)
+    const registration: any = await Registration.findById(registrationId)
       .populate("event", "title date venue")
       .populate("user", "name email");
 
     if (!registration) return res.status(404).json({ success: false, error: "Registration not found" });
-    if ((registration.user as any).toString() !== String(userId)) {
+    if (String((registration.user as any)?._id || registration.user) !== String(userId)) {
       return res.status(403).json({ success: false, error: "Access denied" });
     }
 
@@ -176,6 +257,7 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
         event: registration.event,
         user: registration.user,
       },
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: "Failed to get payment status" });
@@ -254,5 +336,64 @@ export const getPaymentHistory = async (req: Request, res: Response) => {
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: "Failed to get payment history" });
+  }
+};
+
+// ===================
+// Renew Payment Order for Pending Registration
+// ===================
+export const renewPaymentOrder = async (req: Request, res: Response) => {
+  try {
+    const { registrationId } = req.params;
+    const userId = (req as any).user.id;
+
+    const registration: any = await Registration.findById(registrationId).populate('event');
+    if (!registration) return res.status(404).json({ success: false, error: 'Registration not found' });
+    if (String(registration.user) !== String(userId)) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+    // Allow renew for pending/failed/cancelled; set back to pending
+    if (!['pending', 'failed', 'cancelled'].includes(registration.status)) {
+      return res.status(400).json({ success: false, error: 'Only pending/failed/cancelled registrations can be renewed' });
+    }
+
+    const event: any = registration.event;
+    if (!event) return res.status(404).json({ success: false, error: 'Event not found' });
+    if (!event.isActive) return res.status(400).json({ success: false, error: 'Event is not active' });
+
+    const ticket = Array.isArray(event.tickets)
+      ? event.tickets.find((t: any) => t.type === registration.ticketType)
+      : null;
+    if (!ticket) return res.status(404).json({ success: false, error: 'Ticket type not found' });
+    if (ticket.available <= 0) return res.status(400).json({ success: false, error: 'Tickets not available' });
+    if (event.maxParticipants && Array.isArray(event.participants) && event.participants.length >= event.maxParticipants) {
+      return res.status(400).json({ success: false, error: 'Event is full' });
+    }
+
+    const order = await razorpay.orders.create({
+      amount: Number(ticket.price) * 100,
+      currency: 'INR',
+      receipt: `renew_${registrationId}_${Date.now()}`.slice(0, 40),
+      notes: { eventId: String(event._id), userId: String(userId), ticketType: registration.ticketType, eventTitle: event.title },
+    });
+
+    registration.paymentOrderId = order.id;
+    registration.amount = Number(ticket.price);
+    registration.status = 'pending';
+    await registration.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Payment order renewed successfully',
+      order: {
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        receipt: order.receipt,
+      },
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Failed to renew payment order' });
   }
 };

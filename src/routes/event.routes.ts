@@ -5,14 +5,11 @@ import { authorizeRoles } from "../middlewares/role.middleware";
 import { validateSchema } from "../middlewares/validate.middleware";
 import { createEventSchema,updateEventWithIdSchema } from "../schemas/event.schema";
 import upload from "../middlewares/multer.middleware";
-import { eventCreationLimiter, uploadLimiter } from "../middlewares/rateLimit.middleware";
 
 const eventRouter = Router();
 
-// Event creation - apply strict rate limiting and upload limiting
+// Event creation
 eventRouter.post("/", 
-  eventCreationLimiter, // Limit event creation
-  uploadLimiter, // Limit file uploads
   authMiddleware, 
   authorizeRoles("admin", "organizer"), 
   upload.fields([
@@ -38,8 +35,6 @@ eventRouter.patch("/:id/participants/:participantId/attendance", authMiddleware,
 
 // Event modification - apply strict rate limiting and upload limiting
 eventRouter.put("/:id", 
-  eventCreationLimiter, // Limit event updates
-  uploadLimiter, // Limit file uploads
   authMiddleware, 
   authorizeRoles("admin", "organizer"), 
   upload.fields([
@@ -52,7 +47,6 @@ eventRouter.put("/:id",
 
 // Event deletion - moderate rate limiting
 eventRouter.delete("/:id", 
-  eventCreationLimiter, // Limit event deletions
   authMiddleware, 
   authorizeRoles("admin", "organizer"), 
   deleteEvent

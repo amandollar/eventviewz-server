@@ -7,6 +7,7 @@ import { cascadeDeleteRegistration } from "../utils/cascadeDelete";
 export interface IRegistration extends Document {
   user: IUser["_id"];
   event: IEvent["_id"];
+  name:string
   registeredAt: Date;
   status: "pending" | "confirmed" | "cancelled" | "failed" | "refunded";
   ticketType: string;
@@ -41,6 +42,7 @@ export interface IRegistration extends Document {
 const registrationSchema = new Schema<IRegistration>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    name:{type:String,required:true},
     event: { type: Schema.Types.ObjectId, ref: "Event", required: true },
     status: { 
       type: String, 

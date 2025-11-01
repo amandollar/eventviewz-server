@@ -8,9 +8,9 @@ import upload from "../middlewares/multer.middleware";
 
 const eventRouter = Router();
 
-// Event creation
-eventRouter.post("/", 
-  authMiddleware, 
+
+
+eventRouter.post("/", authMiddleware, 
   authorizeRoles("admin", "organizer"), 
   upload.fields([
     { name: 'image', maxCount: 1 },

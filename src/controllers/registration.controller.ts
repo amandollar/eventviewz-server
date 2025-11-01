@@ -9,6 +9,7 @@ import { confirmRegistrationEffects, revertConfirmedRegistrationEffects } from "
 export const registerForEvent = async (req: Request, res: Response) => {
     try {
         const { 
+            name,
             eventId, 
             ticketType,
             registrationNumber,
@@ -66,6 +67,7 @@ export const registerForEvent = async (req: Request, res: Response) => {
 
         // Free events: create confirmed registration and apply side effects
         const registration = await Registration.create({
+            name:name,
             user: userId,
             event: eventId,
             status: "confirmed",
@@ -105,6 +107,7 @@ export const updateRegistration = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
         const { 
+            name,
             ticketType,
             phoneNumber,
             college,
@@ -133,6 +136,7 @@ export const updateRegistration = async (req: Request, res: Response) => {
         }
 
         // Update fields if provided
+        if(name) registration.name = name;
         if (ticketType) registration.ticketType = ticketType;
         if (phoneNumber) registration.phoneNumber = phoneNumber;
         if (college) registration.college = college;

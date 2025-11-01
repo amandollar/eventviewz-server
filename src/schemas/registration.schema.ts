@@ -3,6 +3,10 @@ import { z } from "zod";
 
 // Enhanced register for event schema with comprehensive user data
 export const registerForEventSchema = z.object({
+    name: z.string()
+      .min(2, "Name must be at least 2 characters long")
+      .max(50, "Name must be less than 50 characters")
+      .trim(),
     eventId: z.string().min(1, "Event ID is required"),
     ticketType: z.string().min(1, "Ticket type is required"),
     // Personal Information
@@ -18,6 +22,11 @@ export const registerForEventSchema = z.object({
 
 // Update registration schema
 export const updateRegistrationSchema = z.object({
+    name: z.string()
+      .min(2, "Name must be at least 2 characters long")
+      .max(50, "Name must be less than 50 characters")
+      .trim()
+      .optional(),
     eventId: z.string().min(1, "Event ID is required"),
     ticketType: z.string().min(1, "Ticket type is required").optional(),
     phoneNumber: z.string()

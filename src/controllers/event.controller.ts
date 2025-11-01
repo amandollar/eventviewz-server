@@ -4,6 +4,7 @@ import Registration from "../models/Register";
 
 // Create new event
 export const createEvent = async (req: Request, res: Response) => {
+    console.log("Creating event");
     try {
         const { 
             title, 
@@ -107,6 +108,7 @@ export const createEvent = async (req: Request, res: Response) => {
 
 //get all events
 export const getEvents = async (req: Request, res: Response) => {
+    console.log("Fetching events");
     try {
         const events = await Event.find();
         res.status(200).json({
@@ -126,6 +128,7 @@ export const getEvents = async (req: Request, res: Response) => {
 //get event by id
 
 export const getEventById = async (req: Request, res: Response) => {
+    console.log("Fetching event by id");
     try {
         const { id } = req.params;
         const event = await Event.findById(id);
@@ -146,6 +149,7 @@ export const getEventById = async (req: Request, res: Response) => {
 //update event
 
 export const updateEvent = async (req: Request, res: Response) => {
+    console.log("Updating event");
     try {
         const { id } = req.params;
         const { 
@@ -259,6 +263,7 @@ export const updateEvent = async (req: Request, res: Response) => {
 };
 
 export const deleteEvent = async (req: Request, res: Response) => {
+    console.log("Deleting event");
     try {
         const { id } = req.params;
         
@@ -309,6 +314,7 @@ export const deleteEvent = async (req: Request, res: Response) => {
 
 // Get events created by the current user (for organizer dashboard)
 export const getMyEvents = async (req: Request, res: Response) => {
+    console.log("Fetching my events");
     try {
         const userId = (req as any).user?.id;
         const userRole = (req as any).user?.role;
@@ -346,6 +352,7 @@ export const getMyEvents = async (req: Request, res: Response) => {
 
 // Search events by title or description
 export const searchEvents = async (req: Request, res: Response) => {
+    console.log("Searching events");
     try {
         const { q } = req.query;
         
@@ -378,6 +385,7 @@ export const searchEvents = async (req: Request, res: Response) => {
 
 // Get events by category
 export const getEventsByCategory = async (req: Request, res: Response) => {
+    console.log("Fetching events by category");
     try {
         const { category } = req.params;
         
@@ -410,6 +418,7 @@ export const getEventsByCategory = async (req: Request, res: Response) => {
 
 // Get event participants with detailed information
 export const getEventParticipants = async (req: Request, res: Response) => {
+
     try {
         const { id } = req.params;
         const userId = (req as any).user?.id;

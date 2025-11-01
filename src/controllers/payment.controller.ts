@@ -21,6 +21,7 @@ const razorpay = new Razorpay({
 export const createPaymentOrder = async (req: Request, res: Response) => {
   try {
     const {
+      name,
       eventId,
       ticketType,
       registrationNumber,
@@ -56,6 +57,7 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
     });
 
     const registration = new Registration({
+      name:name,
       user: userId,
       event: eventId,
       status: "pending",

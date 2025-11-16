@@ -17,7 +17,16 @@ export const registerForEventSchema = z.object({
         "Phone number must be exactly 10 digits"),
     college: z.string().min(2, "College/University name is required"),
     department: z.string().min(2, "Department/Branch is required"),
-    yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"])
+    yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"]),
+    // Optional team registration fields (used mainly for hackathons)
+    teamType: z.enum(["individual", "team"]).optional(),
+    teamSize: z.coerce.number().int().min(1).max(4).optional(),
+    teamMembers: z.array(z.object({
+      name: z.string().min(2, "Member name must be at least 2 characters long").max(50).trim(),
+      registrationNumber: z.string().optional(),
+      phoneNumber: z.string().trim().regex(/^\d{10}$/,
+        "Phone number must be exactly 10 digits").optional(),
+    })).max(3).optional(),
 });
 
 // Update registration schema

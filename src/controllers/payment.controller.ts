@@ -29,12 +29,35 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       college,
       department,
       yearOfStudy,
+      // Optional team registration fields (mainly for hackathons)
+      teamType,
+      teamSize,
+      teamMembers,
     } = req.body;
     const userId = (req as any).user.id;
 
     const event: any = await Event.findById(eventId);
     if (!event) return res.status(404).json({ success: false, error: "Event not found" });
     if (!event.isActive) return res.status(400).json({ success: false, error: "Event is not active" });
+
+    // Extra safety: validate hackathon team configuration server-side
+    if (event.category === "hackathon") {
+      const members = Array.isArray(teamMembers) ? teamMembers : [];
+
+      if (teamType === "team") {
+        if (!teamSize || Number(teamSize) < 2 || Number(teamSize) > 4) {
+          return res.status(400).json({ success: false, error: "Invalid team size for hackathon. Team size must be between 2 and 4." });
+        }
+        if (members.length !== Number(teamSize) - 1) {
+          return res.status(400).json({ success: false, error: "Team members count must match team size (leader + members)." });
+        }
+      } else {
+        // Individual registration should not send extra team members
+        if (members.length > 0) {
+          return res.status(400).json({ success: false, error: "Team members provided for individual registration. Please select team registration type." });
+        }
+      }
+    }
 
     const ticket = event.tickets.find((t: any) => t.type === ticketType);
     if (!ticket) return res.status(404).json({ success: false, error: "Ticket type not found" });
@@ -49,27 +72,39 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
     const eventIdStr = String(eventId);
     const userIdStr = String(userId);
 
+    // For hackathon teams, charge per person: base ticket price * team size
+    const teamCount =
+      event.category === "hackathon" && teamType === "team" && Number(teamSize) > 1
+        ? Number(teamSize)
+        : 1;
+    const basePrice = Number(ticket.price) || 0;
+    const orderAmount = basePrice * teamCount * 100; // Razorpay uses paise
+
     const order = await razorpay.orders.create({
-      amount: ticket.price * 100,
+      amount: orderAmount,
       currency: "INR",
       receipt: `e${eventIdStr.slice(-6)}_u${userIdStr.slice(-6)}_${Date.now()}`.slice(0, 40),
       notes: { eventId, userId, ticketType, eventTitle: event.title },
     });
 
     const registration = new Registration({
-      name:name,
+      name: name,
       user: userId,
       event: eventId,
       status: "pending",
       ticketType,
       paymentOrderId: order.id,
-      amount: ticket.price,
+      amount: basePrice * teamCount,
       registeredAt: new Date(),
       registrationNumber,
       phoneNumber,
       college,
       department,
       yearOfStudy,
+      // Hackathon/team metadata so paid flow matches free registration behavior
+      teamType: teamType ?? "individual",
+      teamSize,
+      teamMembers: Array.isArray(teamMembers) ? teamMembers : undefined,
     });
 
     await registration.save();
@@ -305,15 +340,22 @@ export const renewPaymentOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Event is full' });
     }
 
+    // For hackathon teams, charge per person: base ticket price * team size
+    const renewTeamCount =
+      event.category === 'hackathon' && registration.teamType === 'team' && Number(registration.teamSize) > 1
+        ? Number(registration.teamSize)
+        : 1;
+    const renewBasePrice = Number(ticket.price) || 0;
+
     const order = await razorpay.orders.create({
-      amount: Number(ticket.price) * 100,
+      amount: renewBasePrice * renewTeamCount * 100,
       currency: 'INR',
       receipt: `renew_${registrationId}_${Date.now()}`.slice(0, 40),
       notes: { eventId: String(event._id), userId: String(userId), ticketType: registration.ticketType, eventTitle: event.title },
     });
 
     registration.paymentOrderId = order.id;
-    registration.amount = Number(ticket.price);
+    registration.amount = renewBasePrice * renewTeamCount;
     registration.status = 'pending';
     await registration.save();
 

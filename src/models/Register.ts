@@ -31,6 +31,14 @@ export interface IRegistration extends Document {
   college: string;
   department: string;
   yearOfStudy: string;
+  // Optional team registration fields
+  teamType?: "individual" | "team";
+  teamSize?: number;
+  teamMembers?: {
+    name: string;
+    registrationNumber?: string;
+    phoneNumber?: string;
+  }[];
   // Organizer details (copied from event for reference)
   organizerDetails?: {
     logo: string;
@@ -52,6 +60,14 @@ const registrationSchema = new Schema<IRegistration>(
     registeredAt: { type: Date, default: Date.now },
     ticketType: { type: String, required: true },
     amount: { type: Number, required: false },
+    // Optional team registration fields
+    teamType: { type: String, enum: ["individual", "team"], default: "individual" },
+    teamSize: { type: Number, required: false },
+    teamMembers: [{
+      name: { type: String, required: false, trim: true },
+      registrationNumber: { type: String, required: false },
+      phoneNumber: { type: String, required: false },
+    }],
     paymentOrderId: { type: String, required: false },
     paymentId: { type: String, required: false },
     paymentVerifiedAt: { type: Date, required: false },

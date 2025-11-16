@@ -16,7 +16,10 @@ export const registerForEvent = async (req: Request, res: Response) => {
             phoneNumber,
             college,
             department,
-            yearOfStudy
+            yearOfStudy,
+            teamType,
+            teamSize,
+            teamMembers,
         } = req.body;
         const userId = (req as any).user.id;
 
@@ -53,6 +56,34 @@ export const registerForEvent = async (req: Request, res: Response) => {
             });
         }
 
+        // Extra safety: validate hackathon team configuration server-side
+        if (event.category === "hackathon") {
+            const members = Array.isArray(teamMembers) ? teamMembers : [];
+
+            if (teamType === "team") {
+                if (!teamSize || Number(teamSize) < 2 || Number(teamSize) > 4) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Invalid team size for hackathon. Team size must be between 2 and 4."
+                    });
+                }
+                if (members.length !== Number(teamSize) - 1) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Team members count must match team size (leader + members)."
+                    });
+                }
+            } else {
+                // Individual registration should not send extra team members
+                if (members.length > 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Team members provided for individual registration. Please select team registration type."
+                    });
+                }
+            }
+        }
+
         // Determine ticket and whether event is paid
         const ticket = (event as any).tickets?.find((t: any) => t.type === ticketType);
         const isPaidEvent = ticket && Number(ticket.price) > 0;
@@ -77,6 +108,10 @@ export const registerForEvent = async (req: Request, res: Response) => {
             college,
             department,
             yearOfStudy,
+            // For hackathon/team events we store optional team metadata, but keep behavior same
+            teamType: teamType ?? "individual",
+            teamSize: teamSize,
+            teamMembers: Array.isArray(teamMembers) ? teamMembers : undefined,
             confirmedAt: new Date()
         });
 

@@ -21,12 +21,26 @@ export const registerForEventSchema = z.object({
     // Optional team registration fields (used mainly for hackathons)
     teamType: z.enum(["individual", "team"]).optional(),
     teamSize: z.coerce.number().int().min(1).max(4).optional(),
+    teamName: z.string().max(50, "Team name must be less than 50 characters").optional(),
     teamMembers: z.array(z.object({
       name: z.string().min(2, "Member name must be at least 2 characters long").max(50).trim(),
-      registrationNumber: z.string().optional(),
+      registrationNumber: z.string().min(1, "Registration number is required for all team members"),
       phoneNumber: z.string().trim().regex(/^\d{10}$/,
-        "Phone number must be exactly 10 digits").optional(),
+        "Phone number must be exactly 10 digits"),
+      department: z.string().min(2, "Department/Branch is required for each member"),
+      yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"]),
     })).max(3).optional(),
+}).superRefine((data, ctx) => {
+    if (data.teamType === "team") {
+        const trimmedName = data.teamName?.trim() ?? "";
+        if (trimmedName.length < 2) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["teamName"],
+                message: "Team name must be at least 2 characters long",
+            });
+        }
+    }
 });
 
 // Update registration schema
@@ -45,7 +59,8 @@ export const updateRegistrationSchema = z.object({
       .optional(),
     college: z.string().min(2, "College/University name is required").optional(),
     department: z.string().min(2, "Department/Branch is required").optional(),
-    yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"]).optional()
+    yearOfStudy: z.enum(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"]).optional(),
+    teamName: z.string().min(2, "Team name must be at least 2 characters long").max(50, "Team name must be less than 50 characters").optional(),
 });
 
 // Update registration status schema

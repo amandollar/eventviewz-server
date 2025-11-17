@@ -19,6 +19,7 @@ export const registerForEvent = async (req: Request, res: Response) => {
             yearOfStudy,
             teamType,
             teamSize,
+            teamName,
             teamMembers,
         } = req.body;
         const userId = (req as any).user.id;
@@ -73,6 +74,13 @@ export const registerForEvent = async (req: Request, res: Response) => {
                         message: "Team members count must match team size (leader + members)."
                     });
                 }
+                const trimmedTeamName = (teamName ?? "").trim();
+                if (!trimmedTeamName || trimmedTeamName.length < 2) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Team name is required for hackathon team registrations and must be at least 2 characters."
+                    });
+                }
             } else {
                 // Individual registration should not send extra team members
                 if (members.length > 0) {
@@ -111,6 +119,7 @@ export const registerForEvent = async (req: Request, res: Response) => {
             // For hackathon/team events we store optional team metadata, but keep behavior same
             teamType: teamType ?? "individual",
             teamSize: teamSize,
+            teamName: teamName,
             teamMembers: Array.isArray(teamMembers) ? teamMembers : undefined,
             confirmedAt: new Date()
         });

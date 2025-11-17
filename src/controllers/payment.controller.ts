@@ -32,6 +32,7 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       // Optional team registration fields (mainly for hackathons)
       teamType,
       teamSize,
+      teamName,
       teamMembers,
     } = req.body;
     const userId = (req as any).user.id;
@@ -50,6 +51,10 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
         }
         if (members.length !== Number(teamSize) - 1) {
           return res.status(400).json({ success: false, error: "Team members count must match team size (leader + members)." });
+        }
+        const trimmedTeamName = (teamName ?? "").trim();
+        if (!trimmedTeamName || trimmedTeamName.length < 2) {
+          return res.status(400).json({ success: false, error: "Team name is required for hackathon team registrations and must be at least 2 characters." });
         }
       } else {
         // Individual registration should not send extra team members
@@ -104,6 +109,7 @@ export const createPaymentOrder = async (req: Request, res: Response) => {
       // Hackathon/team metadata so paid flow matches free registration behavior
       teamType: teamType ?? "individual",
       teamSize,
+      teamName,
       teamMembers: Array.isArray(teamMembers) ? teamMembers : undefined,
     });
 

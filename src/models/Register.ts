@@ -34,10 +34,13 @@ export interface IRegistration extends Document {
   // Optional team registration fields
   teamType?: "individual" | "team";
   teamSize?: number;
+  teamName?: string;
   teamMembers?: {
     name: string;
     registrationNumber?: string;
     phoneNumber?: string;
+    department?: string;
+    yearOfStudy?: string;
   }[];
   // Organizer details (copied from event for reference)
   organizerDetails?: {
@@ -63,10 +66,17 @@ const registrationSchema = new Schema<IRegistration>(
     // Optional team registration fields
     teamType: { type: String, enum: ["individual", "team"], default: "individual" },
     teamSize: { type: Number, required: false },
+    teamName: { type: String, required: false, trim: true },
     teamMembers: [{
       name: { type: String, required: false, trim: true },
       registrationNumber: { type: String, required: false },
       phoneNumber: { type: String, required: false },
+      department: { type: String, required: false, trim: true },
+      yearOfStudy: {
+        type: String,
+        enum: ["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Graduate", "Other"],
+        required: false,
+      },
     }],
     paymentOrderId: { type: String, required: false },
     paymentId: { type: String, required: false },

@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 
+
+//this is db connection 
 const connectDB = async (): Promise<void> => {
   try {
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/eventviewz';
